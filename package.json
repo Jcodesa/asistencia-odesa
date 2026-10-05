@@ -1,0 +1,10 @@
+{
+  "name": "asistencia-odesa",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Asistencia ODESA: app instalable (GitHub Pages) + motor en Google Sheets / Apps Script",
+  "scripts": {
+    "verificar": "node pruebas/verificar.js",
+    "local": "node pruebas/servidor-local.js"
+  }
+}

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistencia ODESA</title>
+<meta name="theme-color" content="#0B3A66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ODESA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-192.png">
+<script src="config.js"></script>
+<style>
+  :root {
+    --fondo: #EEF2F6; --tarjeta: #FFFFFF; --tinta: #0E1B2B; --suave: #51606F; --linea: #D3DBE4;
+    --marca: #0B3A66; --entrada: #13733A; --salida: #B8400C; --aviso: #8A5A00; --avisoFondo: #FFF4D6;
+    --error: #A61B1B; --errorFondo: #FDE8E8; --okFondo: #E3F4E8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--fondo); color: var(--tinta); }
+  body { font: 18px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+  .barra { background: var(--marca); color: #fff; padding: 14px 16px; font-weight: 700; letter-spacing: .04em; display: flex; justify-content: space-between; align-items: baseline; }
+  .barra small { font-weight: 500; letter-spacing: 0; opacity: .85; font-size: 15px; }
+  .demo { background: var(--avisoFondo); color: var(--aviso); padding: 8px 16px; font-size: 15px; text-align: center; }
+  main { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; }
+  h1 { font-size: 26px; line-height: 1.15; margin: 8px 0 2px; }
+  h2 { font-size: 17px; margin: 0 0 10px; color: var(--suave); font-weight: 600; }
+  p { margin: 0 0 12px; }
+  .fecha { color: var(--suave); margin-bottom: 16px; }
+  .fecha::first-letter { text-transform: uppercase; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .grande { font-size: 22px; font-weight: 700; }
+  .dato { font-variant-numeric: tabular-nums; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input[type=text], input[type=tel], textarea {
+    width: 100%; font: inherit; font-size: 20px; padding: 14px; border: 2px solid var(--linea);
+    border-radius: 12px; background: #fff; color: var(--tinta);
+  }
+  input.cedula { font-size: 28px; letter-spacing: .06em; text-align: center; font-variant-numeric: tabular-nums; }
+  textarea { font-size: 18px; min-height: 84px; resize: vertical; }
+  input:focus, textarea:focus, button:focus-visible { outline: 3px solid #5AA7E8; outline-offset: 2px; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 14px; }
+  .boton { display: block; width: 100%; min-height: 64px; padding: 14px; font-size: 21px; font-weight: 700; color: #fff; background: var(--marca); }
+  .boton.entrada { background: var(--entrada); }
+  .boton.salida { background: var(--salida); }
+  .boton.gigante { min-height: 112px; font-size: 26px; }
+  .boton.claro { background: #fff; color: var(--marca); border: 2px solid var(--marca); min-height: 56px; font-size: 18px; }
+  .boton[disabled] { opacity: .55; }
+  .enlace { background: none; color: var(--marca); text-decoration: underline; padding: 12px 4px; font-size: 16px; }
+  .opcion { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left;
+    min-height: 58px; padding: 12px 14px; margin-bottom: 8px; background: #fff; color: var(--tinta);
+    border: 2px solid var(--linea); border-radius: 12px; font-size: 18px; font-weight: 600; }
+  .opcion small { font-weight: 500; color: var(--suave); white-space: nowrap; }
+  .opcion.si { border-color: var(--marca); background: #E6F0FA; }
+  .opcion.si::before { content: "✓"; font-weight: 800; color: var(--marca); margin-right: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { min-height: 48px; padding: 10px 14px; background: #fff; color: var(--tinta); border: 2px solid var(--linea); border-radius: 999px; font-size: 16px; font-weight: 600; text-align: left; }
+  .chip.si { background: var(--marca); border-color: var(--marca); color: #fff; }
+  .estado { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; font-weight: 600; }
+  .estado.ok { background: var(--okFondo); color: var(--entrada); }
+  .estado.espera { background: #E6F0FA; color: var(--marca); }
+  .estado.mal { background: var(--errorFondo); color: var(--error); display: block; }
+  .estado.aviso { background: var(--avisoFondo); color: var(--aviso); }
+  .estado.mal .boton { margin-top: 10px; }
+  .giro { width: 20px; height: 20px; flex: none; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: giro 0.9s linear infinite; }
+  @keyframes giro { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .giro { animation-duration: 3s; } }
+  .foto { display: flex; gap: 12px; align-items: center; }
+  .foto img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; border: 1px solid var(--linea); flex: none; }
+  .foto .boton { flex: 1; }
+  .falta { background: var(--errorFondo); color: var(--error); border-radius: 12px; padding: 12px 14px; font-weight: 600; margin-bottom: 12px; }
+  .listo { text-align: center; padding: 28px 16px; }
+  .listo .marca { width: 92px; height: 92px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center; font-size: 52px; color: #fff; background: var(--entrada); }
+  .listo.salida .marca { background: var(--salida); }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .lista li { padding: 8px 0; border-top: 1px solid var(--linea); display: flex; justify-content: space-between; gap: 10px; }
+  .lista li:first-child { border-top: 0; }
+  .legal { font-size: 16px; color: var(--suave); }
+  .centro { text-align: center; }
+  .reloj { font-size: 54px; line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .01em; margin: 4px 0 8px; }
+  .reloj.fin { font-size: 38px; }
+  .estado.alarma { background: var(--salida); color: #fff; font-size: 20px; }
+  .tarjeta.alarma { border-color: var(--salida); border-width: 3px; }
+  .opcion.agregar { border-style: dashed; color: var(--marca); justify-content: center; }
+  .opcion .nueva { background: var(--avisoFondo); color: var(--aviso); border-radius: 999px; padding: 2px 10px; font-size: 14px; }
+  .formObra { border: 2px solid var(--marca); border-radius: 12px; padding: 14px; }
+  .formObra label { margin-top: 12px; }
+  .formObra label:first-child { margin-top: 0; }
+  .formObra .boton { margin-top: 14px; }
+  .avisos { margin-top: 14px; }
+  .avisos .tarjeta { margin-bottom: 10px; }
+  .avisos p { margin-bottom: 10px; }
+  .renglon { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--entrada); font-weight: 600; font-size: 16px; padding: 4px 2px; }
+  .renglon .enlace { padding: 8px 4px; white-space: nowrap; }
+  .nota { font-size: 15px; color: var(--suave); text-align: center; margin: 6px 0 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="barra"><span>ODESA</span><small>Registro de asistencia</small></div>
+<div class="demo" id="demo" hidden>Modo demostración: nada de lo que marques aquí se guarda. Falta conectar la app con la hoja de Google (archivo config.js).</div>
+<main id="app"></main>
+<input type="file" id="camara" accept="image/*" capture="user" hidden>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Dónde está corriendo ---------- */
+  // EN_GOOGLE: pantalla antigua, pegada dentro de Apps Script.  API: app publicada, conectada al motor por internet.
+  var EN_GOOGLE = typeof google !== 'undefined' && !!(google.script && google.script.run);
+  var API = (typeof window.ODESA_API === 'string' && /^https?:\/\/\S+$/.test(window.ODESA_API.trim())) ? window.ODESA_API.trim() : '';
+  var DEMO = !EN_GOOGLE && !API;
+
+  /* ---------- Modo demostración (sin conexión con la hoja: nada se guarda) ---------- */
+  if (DEMO) {
+    document.getElementById('demo').hidden = false;
+    var demoObras = [{ nombre: 'Summus', lat: 11.0041, lon: -74.8070, radio: 150 }, { nombre: 'Lago Mar Villa Campestre', lat: 11.0312, lon: -74.8721, radio: 150 }];
+    var demoAbierta = null, demoCerradas = [], demoGente = { '1045678901': { nombre: 'PEDRO PÉREZ GÓMEZ', autorizo: true } };
+    var demoHora = function () { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
+    var demoFn = {
+      iniciar: function (d) {
+        var p = demoGente[d.cedula];
+        return { ok: true, fotoObligatoria: true, gpsObligatorio: false, cedulaNueva: !!d.cedula && !p,
+          ahoraMs: Date.now(), horaRecordatorio: '17:00', obras: demoObras,
+          actividades: ['Armado de acero', 'Fundida de concreto', 'Instalación hidráulica', 'Instalación eléctrica', 'Enchape y acabados', 'Impermeabilización', 'Limpieza y aseo de obra', 'Otra'],
+          trabajador: p ? { cedula: d.cedula, nombre: p.nombre, autorizo: p.autorizo, inactivo: false, tieneCelular: true } : null,
+          abierta: p ? demoAbierta : null, cerradas: p ? demoCerradas : [] };
+      },
+      aceptar: function (d) {
+        if (!demoGente[d.cedula]) demoGente[d.cedula] = { nombre: String(d.nombre || '').toUpperCase() };
+        demoGente[d.cedula].autorizo = true;
+        return { ok: true, nombre: demoGente[d.cedula].nombre };
+      },
+      marcar: function (d) {
+        if (d.tipo === 'entrada') {
+          if (d.obraNueva) demoObras.push({ nombre: d.obraNueva.nombre, lat: d.lat, lon: d.lon, radio: 150, porValidar: true });
+          demoAbierta = { obra: d.obra, entrada: demoHora(), entradaMs: Date.now(), actividades: d.actividades };
+          return { ok: true, tipo: 'entrada', hora: demoAbierta.entrada, obra: d.obra, ubicacion: 'EN OBRA', distancia: 35 };
+        }
+        var horas = Math.round((Date.now() - demoAbierta.entradaMs) / 36000) / 100;
+        var c = { obra: demoAbierta.obra, entrada: demoAbierta.entrada, salida: demoHora(), horas: horas };
+        demoCerradas.push(c); demoAbierta = null;
+        return { ok: true, tipo: 'salida', hora: c.salida, obra: c.obra, ubicacion: 'EN OBRA', distancia: 20, horas: horas };
+      }
+    };
+    var corredor = function (bien, mal) {
+      var o = {
+        withSuccessHandler: function (f) { return corredor(f, mal); },
+        withFailureHandler: function (f) { return corredor(bien, f); }
+      };
+      Object.keys(demoFn).forEach(function (k) {
+        o[k] = function (arg) { setTimeout(function () { try { bien && bien(demoFn[k](arg || {})); } catch (e) { mal && mal(e); } }, 350); };
+      });
+      return o;
+    };
+    window.google = { script: { run: corredor(null, null) } };
+  }
+
+  /* ---------- Estado de la pantalla ---------- */
+  var app = document.getElementById('app');
+  var camara = document.getElementById('camara');
+  var E = { cedula: '', disp: '', datos: null, tipo: '', gps: null, gpsEstado: '', gpsError: '', obra: '', acts: [], foto: '', nota: '', enviando: false,
+    obraNueva: null, obraForm: false, borrador: { nombre: '', direccion: '' } };
+  var tic = null, desfase = 0, yaSono = false;
+
+  function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function borrar(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+  E.cedula = leer('odesa_cedula');
+  E.disp = leer('odesa_celular');
+  if (!E.disp) { E.disp = 'C' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); guardar('odesa_celular', E.disp); }
+
+  function llamar(fn, arg) {
+    if (EN_GOOGLE || DEMO) {
+      return new Promise(function (bien, mal) {
+        google.script.run.withSuccessHandler(bien).withFailureHandler(mal)[fn](arg);
+      });
+    }
+    // App publicada: la petición viaja por internet hasta el motor que está junto a la hoja de Google.
+    return fetch(API, {
+      method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: fn, datos: arg })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('respuesta ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* ---------- Avisos (notificaciones) e instalación ---------- */
+  var HAY_SW = !EN_GOOGLE && !DEMO && 'serviceWorker' in navigator;
+  var PUSH = HAY_SW && 'PushManager' in window && 'Notification' in window;
+  var ES_IPHONE = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var INSTALADA = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  var invitacion = null, avisoMensaje = '';
+
+  if (HAY_SW) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+    // El servicio de avisos necesita saber con qué motor hablar y qué celular es este.
+    try {
+      caches.open('odesa-ajustes').then(function (c) {
+        return c.put('ajustes.json', new Response(JSON.stringify({ api: API, disp: E.disp })));
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); invitacion = ev; pintarAvisos(); });
+  window.addEventListener('appinstalled', function () { invitacion = null; INSTALADA = true; pintarAvisos(); });
+
+  function claveEnBytes(texto) {
+    var b64 = texto.replace(/-/g, '+').replace(/_/g, '/'), crudo = atob(b64 + '==='.slice((b64.length + 3) % 4));
+    var out = new Uint8Array(crudo.length);
+    for (var i = 0; i < crudo.length; i++) out[i] = crudo.charCodeAt(i);
+    return out;
+  }
+  function mismaClave(suscripcion, clave) {
+    try {
+      var a = new Uint8Array(suscripcion.options.applicationServerKey);
+      if (a.length !== clave.length) return false;
+      for (var i = 0; i < a.length; i++) if (a[i] !== clave[i]) return false;
+    } catch (e) {}
+    return true;
+  }
+  function pedirPermiso() {
+    return new Promise(function (listo) {
+      var r = Notification.requestPermission(listo);
+      if (r && r.then) r.then(listo, function () { listo('denied'); });
+    });
+  }
+  /** Deja este celular listo para recibir avisos. Con "preguntar" muestra el permiso del celular. */
+  function activarAvisos(preguntar) {
+    if (!PUSH || !E.datos || !E.datos.clavePush) return Promise.resolve(false);
+    return (preguntar ? pedirPermiso() : Promise.resolve(Notification.permission)).then(function (permiso) {
+      if (permiso !== 'granted') return false;
+      var clave = claveEnBytes(E.datos.clavePush);
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.getSubscription().then(function (s) {
+          if (s && !mismaClave(s, clave)) return s.unsubscribe().then(function () { return null; });
+          return s;
+        }).then(function (s) {
+          return s || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: clave });
+        });
+      }).then(function (s) {
+        if (E.datos.avisos && leer('odesa_aviso') === s.endpoint) return true;
+        return llamar('suscribir', { cedula: E.cedula, dispositivo: E.disp, endpoint: s.endpoint }).then(function (r) {
+          if (!r || !r.ok) { avisoMensaje = (r && r.mensaje) || ''; return false; }
+          guardar('odesa_aviso', s.endpoint); E.datos.avisos = true; return true;
+        });
+      });
+    }).catch(function () { return false; });
+  }
+
+  function pintarAvisos() {
+    var c = document.getElementById('avisos'); if (!c || !E.datos || !E.datos.trabajador) return;
+    var h = '';
+    if (PUSH && E.datos.clavePush) {
+      var permiso = Notification.permission;
+      if (permiso === 'granted' && E.datos.avisos) {
+        h += '<div class="renglon"><span>✓ Avisos activados en este celular</span><button class="enlace" data-a="probarAviso">Probar aviso</button></div>';
+      } else if (permiso === 'denied') {
+        h += '<p class="nota">Los avisos están bloqueados en este celular. Pídele a tu encargado que te ayude a activarlos.</p>';
+      } else {
+        h += '<div class="tarjeta"><p><strong>Activa los avisos</strong> para que el celular te recuerde marcar la entrada y la salida.</p>' +
+          '<button class="boton claro" data-a="activarAvisos">Activar avisos</button></div>';
+      }
+    } else if (!EN_GOOGLE && !DEMO && ES_IPHONE && !INSTALADA) {
+      h += '<div class="tarjeta"><p><strong>Para recibir avisos en iPhone:</strong> toca el botón Compartir y luego «Agregar a inicio». ' +
+        'Después abre la app desde el ícono nuevo.</p></div>';
+    }
+    if (avisoMensaje) h += '<p class="nota" role="status">' + esc(avisoMensaje) + '</p>';
+    if (invitacion && !INSTALADA) h += '<button class="boton claro" data-a="instalarApp">Instalar la app en este celular</button>';
+    c.innerHTML = h;
+  }
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function hora12(h) {
+    var m = String(h || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return '';
+    var n = Number(m[1]);
+    return ((n % 12) || 12) + ':' + m[2] + (n < 12 ? ' a. m.' : ' p. m.');
+  }
+  function horasTxt(h) {            // 9.5 -> "9 h 30 min"
+    var min = Math.round((Number(h) || 0) * 60);
+    return Math.floor(min / 60) + ' h ' + (min % 60) + ' min';
+  }
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function relojTxt(ms) {            // milisegundos -> "02:35:10"
+    var s = Math.max(0, Math.floor(ms / 1000));
+    return dos(Math.floor(s / 3600)) + ':' + dos(Math.floor(s / 60) % 60) + ':' + dos(s % 60);
+  }
+  function ahoraGoogle() { return Date.now() + desfase; }
+  function minutosColombia(ms) { var d = new Date(ms - 5 * 3600000); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+  function minutosDe(hhmm) { var m = String(hhmm || '').match(/(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : -1; }
+  function claveObra(v) {
+    var t = String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    try { t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    return t;
+  }
+  function tituloObra(v) {
+    return String(v || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); }).slice(0, 60).trim();
+  }
+  function distTxt(m) {
+    if (m === '' || m === null || m === undefined) return '';
+    return m < 1000 ? 'a ' + Math.round(m) + ' m' : 'a ' + String(Math.round(m / 100) / 10).replace('.', ',') + ' km';
+  }
+  function metros(lat1, lon1, lat2, lon2) {
+    var r = Math.PI / 180, R = 6371000;
+    var a = Math.pow(Math.sin((lat2 - lat1) * r / 2), 2) + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.pow(Math.sin((lon2 - lon1) * r / 2), 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function fechaLarga() {
+    try { return new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Bogota' }); }
+    catch (e) { return new Date().toLocaleDateString(); }
+  }
+  function primerNombre(n) { return String(n || '').trim().split(' ')[0]; }
+  function pararReloj() { if (tic) { clearInterval(tic); tic = null; } }
+  function pintar(html) { pararReloj(); app.innerHTML = html; window.scrollTo(0, 0); }
+
+  /* ---------- Contador de la jornada ---------- */
+  function tictac() {
+    var r = document.getElementById('reloj'), ab = E.datos && E.datos.abierta;
+    if (!r || !ab) return pararReloj();
+    var ahora = ahoraGoogle(), llevo = ahora - ab.entradaMs;
+    r.textContent = relojTxt(llevo);
+    // Hora de salida: cuando pasa la hora configurada (si entró antes de esa hora) o al cumplir 10 horas.
+    var limite = minutosDe(E.datos.horaRecordatorio);
+    var esHora = llevo >= 10 * 3600000 ||
+      (limite >= 0 && minutosColombia(ahora) >= limite && minutosColombia(ab.entradaMs) < limite && llevo < 20 * 3600000);
+    var a = document.getElementById('avisoSalida');
+    if (esHora && a && a.className.indexOf('alarma') < 0) {
+      a.className = 'estado alarma';
+      a.textContent = 'Ya es hora: marca tu salida para que cuenten tus horas';
+      a.setAttribute('role', 'alert');
+      document.getElementById('tarjetaReloj').className = 'tarjeta centro alarma';
+      if (!yaSono) { yaSono = true; sonar(); }
+    }
+  }
+  function sonar() {
+    try { if (navigator.vibrate) navigator.vibrate([500, 250, 500, 250, 500]); } catch (e) {}
+    try {
+      var C = window.AudioContext || window.webkitAudioContext, ac = new C();
+      [0, 0.45, 0.9].forEach(function (t) {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = 880; g.gain.value = 0.25; o.connect(g); g.connect(ac.destination);
+        o.start(ac.currentTime + t); o.stop(ac.currentTime + t + 0.3);
+      });
+    } catch (e) {}
+  }
+
+  /* ---------- Pantallas ---------- */
+  function pCargando(texto) {
+    pintar('<div class="tarjeta"><div class="estado espera"><span class="giro"></span><span>' + esc(texto || 'Cargando…') + '</span></div></div>');
+  }
+
+  function pErrorRed(reintento) {
+    pintar('<div class="tarjeta"><p class="grande">No hay conexión</p><p>Revisa que tengas datos o wifi y vuelve a intentar.</p>' +
+      '<button class="boton" data-a="reintentar">Intentar de nuevo</button></div>' +
+      '<p class="nota">Si el problema sigue, avísale a tu encargado.</p>');
+    E.reintento = reintento;
+  }
+
+  function pCedula(mensaje) {
+    pintar('<h1>Bienvenido</h1><p class="fecha">Para empezar, escribe tu cédula. Solo te la pedimos una vez.</p>' +
+      (mensaje ? '<div class="falta">' + esc(mensaje) + '</div>' : '') +
+      '<div class="tarjeta"><label for="ced">Número de cédula</label>' +
+      '<input class="cedula" id="ced" type="tel" inputmode="numeric" autocomplete="off" maxlength="12" value="' + esc(E.cedula) + '">' +
+      '</div><button class="boton" data-a="entrarCedula">Continuar</button>');
+  }
+
+  function pAceptar(nombre) {
+    var nuevo = !nombre, t = E.datos && E.datos.trabajador;
+    pintar('<h1>' + (nuevo ? 'Primera vez' : 'Hola, ' + esc(primerNombre(nombre))) + '</h1>' +
+      '<p class="fecha">Cédula ' + esc(E.cedula) + '</p><div id="falta"></div>' +
+      (nuevo ? '<div class="tarjeta"><label for="nom">Tu nombre y apellidos</label>' +
+        '<input id="nom" type="text" autocomplete="name" autocapitalize="characters" maxlength="80"></div>' : '') +
+      (!t || !t.tieneCelular ? '<div class="tarjeta"><label for="cel">Tu celular con WhatsApp (opcional)</label>' +
+        '<input id="cel" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" placeholder="300 000 0000">' +
+        '<p class="legal" style="margin:8px 0 0">Para recordarte marcar la salida.</p></div>' : '') +
+      '<div class="tarjeta"><h2>Antes de continuar</h2>' +
+      '<p class="legal">Cada vez que marques entrada o salida, ODESA guarda tu nombre, tu cédula, la hora, ' +
+      'la ubicación del celular en ese momento y una foto. Estos datos y tu número de celular se usan solo para ' +
+      'controlar la asistencia, recordarte marcar la entrada y la salida, y liquidar tu pago. La ubicación se toma ' +
+      'únicamente al marcar: no se te sigue durante el día.</p></div>' +
+      '<button class="boton" data-a="aceptar">Acepto y continuar</button>' +
+      '<p class="centro"><button class="enlace" data-a="cambiar">Esa no es mi cédula</button></p>');
+  }
+
+  function pInicio() {
+    var d = E.datos, t = d.trabajador, h = '';
+    h += '<h1>Hola, ' + esc(primerNombre(t.nombre)) + '</h1><p class="fecha">' + esc(fechaLarga()) + '</p>';
+    if (t.inactivo) {
+      h += '<div class="falta">Tu registro está inactivo. Habla con tu encargado.</div>';
+    } else if (d.abierta) {
+      h += '<div class="tarjeta centro" id="tarjetaReloj"><h2>Tiempo trabajado hoy</h2>' +
+        '<div class="reloj" id="reloj" role="timer" aria-live="off">' + relojTxt(ahoraGoogle() - d.abierta.entradaMs) + '</div>' +
+        '<p>' + esc(d.abierta.obra) + ' · entraste a las <span class="dato">' + esc(hora12(d.abierta.entrada)) + '</span></p>' +
+        '<div class="estado aviso" id="avisoSalida" style="justify-content:center">El tiempo se detiene cuando marques la salida</div></div>' +
+        '<button class="boton salida gigante" data-a="irSalida">MARCAR SALIDA</button>';
+    } else {
+      if (!d.cerradas.length) {
+        h += '<div class="tarjeta"><h2>Tu jornada de hoy</h2><p class="grande">Aún no has marcado entrada</p></div>';
+      }
+      else {
+        h += '<div class="tarjeta"><div class="estado ok">✓ Tu jornada de hoy quedó completa</div></div>';
+      }
+      h += d.cerradas.length
+        ? '<button class="boton claro" data-a="irEntrada">Marcar otra entrada (cambio de obra)</button>'
+        : '<button class="boton entrada gigante" data-a="irEntrada">MARCAR ENTRADA</button>';
+    }
+    if (d.cerradas.length) {
+      h += '<div class="tarjeta" style="margin-top:14px"><h2>Jornadas completas hoy</h2><ul class="lista">';
+      d.cerradas.forEach(function (c) {
+        h += '<li><span>' + esc(c.obra) + '<br><span class="dato">' + esc(hora12(c.entrada)) + ' – ' + esc(hora12(c.salida)) + '</span></span>' +
+          '<strong class="dato">' + esc(horasTxt(c.horas)) + '</strong></li>';
+      });
+      h += '</ul></div>';
+    }
+    h += '<div class="avisos" id="avisos"></div>';
+    h += '<p class="centro"><button class="enlace" data-a="cambiar">No soy ' + esc(primerNombre(t.nombre)) + '</button></p>';
+    pintar(h);
+    pintarAvisos();
+    if (d.abierta && !t.inactivo) { tictac(); tic = setInterval(tictac, 1000); }
+  }
+
+  function pMarcar() {
+    var d = E.datos, sal = E.tipo === 'salida', h = '';
+    h += '<h1>' + (sal ? 'Marcar salida' : 'Marcar entrada') + '</h1>';
+    h += '<p class="fecha">' + (sal ? 'Entraste a las ' + esc(hora12(d.abierta.entrada)) + ' en ' + esc(d.abierta.obra) : esc(fechaLarga())) + '</p>';
+    h += '<div id="falta"></div>';
+    h += '<div class="tarjeta"><h2>1. Tu ubicación</h2><div id="gps"></div></div>';
+    if (!sal) h += '<div class="tarjeta"><h2>2. ¿En qué obra estás?</h2><div id="obras"></div></div>';
+    h += '<div class="tarjeta"><h2>' + (sal ? '2. ¿Qué hiciste hoy?' : '3. ¿Qué vas a hacer hoy?') + '</h2><div class="chips" id="acts"></div></div>';
+    h += '<div class="tarjeta"><h2>' + (sal ? '3' : '4') + '. Tu foto</h2><div class="foto" id="foto"></div></div>';
+    if (sal) h += '<div class="tarjeta"><label for="nota">¿Algo que reportar? (opcional)</label><textarea id="nota" maxlength="500" placeholder="Ejemplo: faltó material, llovió…"></textarea></div>';
+    h += '<button class="boton ' + (sal ? 'salida' : 'entrada') + '" id="confirmar" data-a="confirmar">' + (sal ? 'CONFIRMAR SALIDA' : 'CONFIRMAR ENTRADA') + '</button>';
+    h += '<p class="centro"><button class="enlace" data-a="volver">Volver</button></p>';
+    pintar(h);
+    pintarGps(); pintarObras(); pintarActs(); pintarFoto();
+  }
+
+  function pintarGps() {
+    var c = document.getElementById('gps'); if (!c) return;
+    if (E.gpsEstado === 'ok') {
+      c.innerHTML = '<div class="estado ok">✓ Ubicación lista <small>(precisión ±' + Math.round(E.gps.precision) + ' m)</small></div>';
+    } else if (E.gpsEstado === 'mal') {
+      c.innerHTML = '<div class="estado mal">' + esc(E.gpsError) +
+        '<button class="boton claro" data-a="gps">Buscar ubicación otra vez</button></div>';
+    } else {
+      c.innerHTML = '<div class="estado espera"><span class="giro"></span><span>Buscando tu ubicación…</span></div>';
+    }
+  }
+
+  function obrasOrdenadas() {
+    var lista = E.datos.obras.map(function (o) {
+      var dist = (!o.local && E.gps && o.lat !== '' && o.lon !== '') ? metros(E.gps.lat, E.gps.lon, o.lat, o.lon) : null;
+      return { nombre: o.nombre, dist: o.local ? -1 : dist, nueva: !!(o.local || o.porValidar) };
+    });
+    if (E.gps) lista.sort(function (a, b) { return (a.dist === null ? 1e12 : a.dist) - (b.dist === null ? 1e12 : b.dist); });
+    return lista;
+  }
+
+  function pintarObras() {
+    var c = document.getElementById('obras'); if (!c) return;
+    guardarBorrador();
+    var lista = obrasOrdenadas();
+    if (!E.obra && !E.obraForm && lista.length && lista[0].dist !== null && lista[0].dist <= 500) E.obra = lista[0].nombre;
+    var h = lista.map(function (o) {
+      return '<button class="opcion' + (o.nombre === E.obra ? ' si' : '') + '" data-a="obra" data-v="' + esc(o.nombre) + '" aria-pressed="' + (o.nombre === E.obra) + '">' +
+        '<span style="flex:1">' + esc(o.nombre) + '</span>' +
+        (o.nueva ? '<span class="nueva">nueva</span>' : '') +
+        (o.dist !== null && o.dist >= 0 ? '<small>' + esc(distTxt(o.dist)) + '</small>' : '') + '</button>';
+    }).join('');
+    if (E.obraForm) {
+      h += '<div class="formObra"><label for="obraNom">Nombre de la obra</label>' +
+        '<input id="obraNom" type="text" maxlength="60" autocapitalize="words" autocomplete="off" value="' + esc(E.borrador.nombre) + '">' +
+        '<label for="obraDir">Dirección o barrio (opcional)</label>' +
+        '<input id="obraDir" type="text" maxlength="120" autocomplete="off" value="' + esc(E.borrador.direccion) + '">' +
+        '<p class="legal" style="margin:10px 0 0">Se guarda con la ubicación que tiene tu celular ahora, y tu encargado la revisa.</p>' +
+        '<button class="boton claro" data-a="obraAgregar">Agregar esta obra</button>' +
+        '<p class="centro" style="margin:0"><button class="enlace" data-a="obraCancelar">Cancelar</button></p></div>';
+    } else {
+      h += '<button class="opcion agregar" data-a="obraForm">+ Mi obra no está en la lista</button>';
+    }
+    c.innerHTML = h;
+  }
+  function guardarBorrador() {   // conserva lo que el trabajador va escribiendo si la lista se vuelve a pintar
+    var n = document.getElementById('obraNom'), dr = document.getElementById('obraDir');
+    if (n) E.borrador = { nombre: n.value, direccion: dr ? dr.value : '' };
+  }
+
+  function pintarActs() {
+    var c = document.getElementById('acts'); if (!c) return;
+    c.innerHTML = E.datos.actividades.map(function (a) {
+      var si = E.acts.indexOf(a) >= 0;
+      return '<button class="chip' + (si ? ' si' : '') + '" data-a="act" data-v="' + esc(a) + '" aria-pressed="' + si + '">' + esc(a) + '</button>';
+    }).join('');
+  }
+
+  function pintarFoto() {
+    var c = document.getElementById('foto'); if (!c) return;
+    c.innerHTML = (E.foto ? '<img src="' + E.foto + '" alt="Tu foto">' : '') +
+      '<button class="boton claro" data-a="foto">' + (E.foto ? 'Tomar otra foto' : 'Tomar foto') + '</button>';
+  }
+
+  function pListo(r) {
+    var sal = r.tipo === 'salida', h = '';
+    h += '<div class="tarjeta listo' + (sal ? ' salida' : '') + '"><div class="marca">✓</div>' +
+      '<p class="grande">' + (sal ? 'Salida registrada' : 'Entrada registrada') + '</p>' +
+      '<p class="grande dato">' + esc(hora12(r.hora)) + '</p><p>' + esc(r.obra) + '</p>' +
+      (sal && r.horas !== '' ? '<p style="margin:14px 0 0">Tiempo trabajado</p><p class="reloj fin">' + esc(horasTxt(r.horas)) + '</p>' : '') + '</div>';
+    if (r.ubicacion === 'FUERA DE OBRA') {
+      h += '<div class="estado aviso" style="margin-bottom:14px">Quedó anotado que marcaste ' + esc(distTxt(r.distancia)) + ' de la obra.</div>';
+    } else if (r.ubicacion === 'SIN GPS') {
+      h += '<div class="estado aviso" style="margin-bottom:14px">Quedó anotado que marcaste sin ubicación.</div>';
+    }
+    if (!sal) h += '<p class="centro">Tu tiempo ya está contando. Al terminar, abre este enlace y marca la salida: <strong>sin salida no se cuentan tus horas.</strong></p>';
+    h += '<button class="boton" data-a="inicio">Listo</button>';
+    pintar(h);
+  }
+
+  /* ---------- Acciones ---------- */
+  function cargar() {
+    if (!E.cedula) return pCedula();
+    pCargando();
+    llamar('iniciar', { cedula: E.cedula, dispositivo: E.disp, app: location.origin + location.pathname.replace(/[^\/]*$/, '') }).then(function (d) {
+      E.datos = d;
+      if (d.ahoraMs) desfase = d.ahoraMs - Date.now();
+      if (!d.trabajador) return pAceptar('');
+      if (!d.trabajador.autorizo) return pAceptar(d.trabajador.nombre);
+      guardar('odesa_cedula', E.cedula);
+      pInicio();
+      // Si el celular ya dio permiso, se confirma en silencio que el motor tenga su dirección de avisos.
+      if (PUSH && Notification.permission === 'granted') activarAvisos(false).then(pintarAvisos);
+    }).catch(function () { pErrorRed(cargar); });
+  }
+
+  function buscarGps() {
+    E.gpsEstado = 'buscando'; E.gps = null; pintarGps();
+    if (!navigator.geolocation) { gpsFallo({ code: 0 }); return; }
+    var intentoFino = true;
+    var bien = function (p) {
+      E.gps = { lat: p.coords.latitude, lon: p.coords.longitude, precision: p.coords.accuracy };
+      E.gpsEstado = 'ok'; pintarGps(); pintarObras(); quitarFalta();
+    };
+    var mal = function (e) {
+      if (intentoFino && e && e.code !== 1) {   // segundo intento, menos exigente
+        intentoFino = false;
+        navigator.geolocation.getCurrentPosition(bien, gpsFallo, { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+      } else { gpsFallo(e); }
+    };
+    navigator.geolocation.getCurrentPosition(bien, mal, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }
+
+  function gpsFallo(e) {
+    E.gpsEstado = 'mal';
+    E.gpsError = (e && e.code === 1)
+      ? 'El celular no dio permiso de ubicación. Cuando aparezca el aviso, toca «Permitir».'
+      : 'No se pudo leer la ubicación. Enciende el GPS (ubicación) del celular y sal a un lugar despejado.';
+    pintarGps();
+  }
+
+  function leerFoto(archivo) {
+    var lector = new FileReader();
+    lector.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = 720, k = Math.min(1, max / Math.max(img.width, img.height));
+        var lienzo = document.createElement('canvas');
+        lienzo.width = Math.round(img.width * k); lienzo.height = Math.round(img.height * k);
+        lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+        E.foto = lienzo.toDataURL('image/jpeg', 0.6);
+        pintarFoto(); quitarFalta();
+      };
+      img.onerror = function () { mostrarFalta('No se pudo leer la foto. Intenta otra vez.'); };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  function mostrarFalta(texto) {
+    var c = document.getElementById('falta'); if (!c) return;
+    c.innerHTML = '<div class="falta" role="alert">' + esc(texto) + '</div>';
+    c.scrollIntoView({ block: 'center' });
+  }
+  function quitarFalta() { var c = document.getElementById('falta'); if (c) c.innerHTML = ''; }
+
+  function confirmar() {
+    if (E.enviando) return;
+    var d = E.datos, faltan = [];
+    if (E.gpsEstado === 'buscando') return mostrarFalta('Espera un momento: todavía se está buscando tu ubicación.');
+    if (!E.gps && d.gpsObligatorio) faltan.push('la ubicación');
+    if (E.tipo === 'entrada' && !E.obra) faltan.push('la obra');
+    if (!E.acts.length) faltan.push('la actividad');
+    if (!E.foto && d.fotoObligatoria) faltan.push('la foto');
+    if (faltan.length) return mostrarFalta('Te falta: ' + faltan.join(', ') + '.');
+
+    var nota = document.getElementById('nota');
+    E.enviando = true;
+    var b = document.getElementById('confirmar');
+    b.disabled = true; b.textContent = 'Enviando…';
+    llamar('marcar', {
+      cedula: E.cedula, tipo: E.tipo, obra: E.obra, actividades: E.acts,
+      obraNueva: (E.tipo === 'entrada' && E.obraNueva && E.obraNueva.nombre === E.obra) ? E.obraNueva : null,
+      lat: E.gps ? E.gps.lat : '', lon: E.gps ? E.gps.lon : '', precision: E.gps ? E.gps.precision : '',
+      foto: E.foto, nota: nota ? nota.value : '', dispositivo: E.disp
+    }).then(function (r) {
+      E.enviando = false;
+      if (!r || !r.ok) {
+        b.disabled = false; b.textContent = E.tipo === 'salida' ? 'CONFIRMAR SALIDA' : 'CONFIRMAR ENTRADA';
+        return mostrarFalta((r && r.mensaje) || 'No se pudo guardar. Intenta de nuevo.');
+      }
+      pListo(r);
+    }).catch(function () {
+      E.enviando = false;
+      b.disabled = false; b.textContent = E.tipo === 'salida' ? 'CONFIRMAR SALIDA' : 'CONFIRMAR ENTRADA';
+      mostrarFalta('No hay conexión. No se guardó: revisa tus datos y toca confirmar otra vez.');
+    });
+  }
+
+  function irMarcar(tipo) {
+    E.tipo = tipo; E.foto = ''; E.obra = ''; E.nota = '';
+    E.obraNueva = null; E.obraForm = false; E.borrador = { nombre: '', direccion: '' };
+    E.datos.obras = E.datos.obras.filter(function (o) { return !o.local; });
+    E.acts = (tipo === 'salida' && E.datos.abierta) ? E.datos.abierta.actividades.filter(function (a) { return E.datos.actividades.indexOf(a) >= 0; }) : [];
+    pMarcar(); buscarGps();
+  }
+
+  var acciones = {
+    reintentar: function () { (E.reintento || cargar)(); },
+    entrarCedula: function () {
+      var v = document.getElementById('ced').value.replace(/\D/g, '');
+      if (v.length < 5) return pCedula('Escribe tu número de cédula completo, solo números.');
+      E.cedula = v; cargar();
+    },
+    aceptar: function (boton) {
+      var campo = document.getElementById('nom'), nombre = campo ? campo.value.trim() : '';
+      var cel = document.getElementById('cel'), celular = cel ? cel.value.replace(/\D/g, '') : '';
+      if (campo && (nombre.length < 5 || nombre.indexOf(' ') < 0)) return mostrarFalta('Escribe tu nombre y apellido completos.');
+      if (celular && !/^3\d{9}$/.test(celular)) return mostrarFalta('Revisa el celular: son 10 números y empieza por 3. Si no tienes, déjalo vacío.');
+      boton.disabled = true;
+      llamar('aceptar', { cedula: E.cedula, nombre: nombre, celular: celular }).then(function (r) {
+        if (!r.ok) { boton.disabled = false; return mostrarFalta(r.mensaje); }
+        cargar();
+      }).catch(function () { pErrorRed(cargar); });
+    },
+    cambiar: function () { borrar('odesa_cedula'); E.cedula = ''; pCedula(); },
+    irEntrada: function () { irMarcar('entrada'); },
+    irSalida: function () { irMarcar('salida'); },
+    volver: function () { pInicio(); },
+    inicio: function () { cargar(); },
+    gps: function () { buscarGps(); },
+    obra: function (b) { E.obra = b.getAttribute('data-v'); E.obraForm = false; pintarObras(); quitarFalta(); },
+    obraForm: function () {
+      E.obraForm = true; pintarObras();
+      var n = document.getElementById('obraNom'); if (n) n.focus();
+    },
+    obraCancelar: function () { E.obraForm = false; E.borrador = { nombre: '', direccion: '' }; pintarObras(); },
+    obraAgregar: function () {
+      guardarBorrador();
+      var nombre = tituloObra(E.borrador.nombre);
+      if (nombre.length < 4) return mostrarFalta('Escribe el nombre completo de la obra.');
+      E.datos.obras = E.datos.obras.filter(function (o) { return !o.local; });
+      var igual = E.datos.obras.filter(function (o) { return claveObra(o.nombre) === claveObra(nombre); })[0];
+      if (igual) {                       // ya estaba en la lista: se usa esa
+        E.obra = igual.nombre; E.obraNueva = null;
+      } else {
+        E.obraNueva = { nombre: nombre, direccion: E.borrador.direccion.replace(/\s+/g, ' ').trim() };
+        E.datos.obras.push({ nombre: nombre, lat: '', lon: '', local: true });
+        E.obra = nombre;
+      }
+      E.obraForm = false; E.borrador = { nombre: '', direccion: '' };
+      pintarObras(); quitarFalta();
+    },
+    act: function (b) {
+      var v = b.getAttribute('data-v'), i = E.acts.indexOf(v);
+      if (i >= 0) E.acts.splice(i, 1); else E.acts.push(v);
+      b.classList.toggle('si', i < 0); b.setAttribute('aria-pressed', String(i < 0)); quitarFalta();
+    },
+    foto: function () { camara.value = ''; camara.click(); },
+    activarAvisos: function (b) {
+      b.disabled = true; avisoMensaje = '';
+      activarAvisos(true).then(function (listo) {
+        if (!listo && Notification.permission === 'granted' && !avisoMensaje) avisoMensaje = 'No se pudieron activar los avisos. Revisa tu conexión e intenta otra vez.';
+        if (listo) avisoMensaje = 'Listo. Toca «Probar aviso» para ver cómo te llegan.';
+        pintarAvisos();
+      });
+    },
+    probarAviso: function (b) {
+      b.disabled = true; avisoMensaje = 'Enviando el aviso de prueba…'; pintarAvisos();
+      llamar('probarAviso', { dispositivo: E.disp }).then(function (r) {
+        avisoMensaje = (r && r.ok) ? 'Aviso enviado. Debe sonar en tu celular en unos segundos.' : ((r && r.mensaje) || 'No se pudo enviar el aviso.');
+        pintarAvisos();
+      }).catch(function () { avisoMensaje = 'No hay conexión para enviar el aviso.'; pintarAvisos(); });
+    },
+    instalarApp: function () {
+      if (!invitacion) return;
+      invitacion.prompt(); invitacion = null; pintarAvisos();
+    },
+    confirmar: confirmar
+  };
+
+  app.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-a]');
+    if (b && acciones[b.getAttribute('data-a')]) acciones[b.getAttribute('data-a')](b);
+  });
+  app.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && ev.target.id === 'ced') acciones.entrarCedula();
+    if (ev.key === 'Enter' && (ev.target.id === 'obraNom' || ev.target.id === 'obraDir')) acciones.obraAgregar();
+  });
+  camara.addEventListener('change', function () { if (camara.files && camara.files[0]) leerFoto(camara.files[0]); });
+
+  cargar();
+})();
+</script>
+</body>
+</html>
