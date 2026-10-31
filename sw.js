@@ -45,7 +45,8 @@ self.addEventListener('push', function (ev) {
       renotify: true,
       requireInteraction: true,
       vibrate: [600, 200, 600, 200, 600, 200, 900],
-      actions: [msj ? { action: 'ver', title: 'Ver mensaje' } : { action: 'marcar', title: 'Marcar ahora' }]
+      actions: [t.abrir === 'chat' ? { action: 'ver', title: 'Responder' } : msj ? { action: 'ver', title: 'Ver mensaje' } : { action: 'marcar', title: 'Marcar ahora' }],
+      data: { abrir: t.abrir || '' }
     });
   }));
 });
@@ -53,10 +54,14 @@ self.addEventListener('push', function (ev) {
 // Al tocar la notificación se abre la app (o se trae al frente si ya estaba abierta).
 self.addEventListener('notificationclick', function (ev) {
   ev.notification.close();
+  var abrir = (ev.notification.data && ev.notification.data.abrir) || '';   // 'chat' = respuesta de la oficina
   ev.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (ventanas) {
     for (var i = 0; i < ventanas.length; i++) {
-      if ('focus' in ventanas[i]) return ventanas[i].focus();
+      if ('focus' in ventanas[i]) {
+        if (abrir && ventanas[i].postMessage) ventanas[i].postMessage({ abrir: abrir });
+        return ventanas[i].focus();
+      }
     }
-    return self.clients.openWindow('./');
+    return self.clients.openWindow(abrir ? './#' + abrir : './');
   }));
 });

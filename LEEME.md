@@ -11,6 +11,7 @@ Los datos quedan en una hoja de Google Sheets y las fotos en Google Drive. No ti
 | **El motor** (guarda los datos y envía los avisos) | Google Apps Script, pegado a tu hoja | `google/Codigo.gs` |
 | **El tablero** (indicadores y gráficos en la hoja) | El mismo proyecto de Apps Script, en otro archivo | `google/Tablero.gs` |
 | **El panel del administrador** (app aparte para la oficina) | GitHub Pages, carpeta `admin/` + archivo `Panel` en Apps Script | `admin/`, `google/Panel.gs` |
+| **Chat y reportes SST** | Archivo `Chat` en Apps Script (pantallas en la app y en el panel) | `google/Chat.gs` |
 | **Las pruebas** | Tu computador | carpeta `pruebas/` |
 
 La app y el motor se conectan con un solo dato: el enlace de la aplicación web de Google (termina en `/exec`),
@@ -87,14 +88,22 @@ Se instala como app aparte en iPhone (Safari › Compartir › Agregar a inicio)
 - **Quién entra:** quien pueda editar la hoja de asistencia y los correos de la fila 1 de Configuración. Escribe su correo, le llega un código de 6 dígitos y queda dentro 30 días en ese equipo. Si le quitas el permiso de edición en la hoja, pierde el acceso.
 - **Hoy:** quién no ha marcado, quién está trabajando (obra, hora y tiempo), quién ya salió. Botones para recordar la entrada o la salida, WhatsApp de cada persona y casillas para escribirle a varias.
 - **Enviar:** recordatorio, anuncio o mensaje; a los que no han marcado entrada, a los que no han marcado salida, a todos o a personas elegidas; ahora o programado (se envía solo a esa hora). Llega como notificación y queda en la tarjeta **Mensajes de la oficina** de la app del trabajador (14 días).
-- **Enviados:** todo lo enviado y lo programado (se puede cancelar). También queda en la pestaña **Mensajes** de la hoja.
+- **Enviados** (botón dentro de Enviar): todo lo enviado y lo programado (se puede cancelar). También queda en la pestaña **Mensajes** de la hoja.
+- **Chat:** conversación uno a uno con cada trabajador. Lo que él escribe aparece con un número rojo; tu respuesta le llega como notificación. Para escribirle a alguien que no ha escrito, búscalo arriba o toca **Chat** junto a su nombre en Hoy. Queda en la pestaña **Chat** de la hoja.
+- **Reportes:** accidentes de trabajo, incidentes, incapacidades, condiciones inseguras y otras novedades, con foto y ubicación. Se pasan a **revisión** y se **cierran** dejando notas. Quedan en la pestaña **Reportes SST** de la hoja.
+- **Correos:** cada reporte llega por correo a los administradores (el accidente, marcado URGENTE y con el recordatorio del reporte a la ARL). Del chat llega como máximo un correo cada 30 minutos por persona.
 - **Avisos:** cambia las horas de los avisos, la insistencia, el correo de control y los días sin avisos. Escribe las mismas filas de Configuración.
+
+## En la app del trabajador
+
+En la pantalla de inicio hay dos botones nuevos: **Chat con la oficina** (con un número si tiene respuestas sin leer) y **Reportar accidente o novedad**. El reporte muestra primero el botón para llamar al 123 si hay un herido grave.
 
 ## Para actualizar más adelante
 - **La app:** reemplaza los archivos en la carpeta del repositorio (menos `config.js`), y en GitHub Desktop: Summary, Commit, Push.
 - **El motor:** pega el nuevo `google/Codigo.gs`, ejecuta **instalar** y publica una **Nueva versión**.
 - **El tablero:** pega el nuevo `google/Tablero.gs` en el archivo `Tablero` y guarda. No hay que publicar nada.
 - **El panel:** pega el nuevo `google/Panel.gs` en el archivo `Panel`, guarda y publica una **Nueva versión**.
+- **El chat:** pega el nuevo `google/Chat.gs` en el archivo `Chat`, guarda y publica una **Nueva versión**.
 
 ## Verificación
 `npm run verificar` ejecuta el motor sobre un simulador de Google y comprueba marcaciones, nómina, tablero,

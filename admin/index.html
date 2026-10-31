@@ -27,10 +27,12 @@
   .barra button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.4); padding: 8px 12px; border-radius: 10px; font-size: 14px; }
   .marco { display: block; }
   nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: #fff; border-top: 1px solid var(--linea);
-    display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+    display: grid; grid-template-columns: repeat(5, 1fr); padding-bottom: env(safe-area-inset-bottom); }
   nav button { background: none; border: 0; padding: 8px 4px 10px; color: var(--suave); font-size: 12px; font-weight: 600;
     display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 58px; }
   nav button svg { width: 24px; height: 24px; }
+  nav button { position: relative; }
+  nav .cuenta { position: absolute; top: 4px; left: calc(50% + 6px); background: var(--salida); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 800; min-width: 18px; padding: 1px 5px; line-height: 16px; }
   nav button.si { color: var(--marca); }
   nav .pie { display: none; }
   @media (min-width: 900px) { .soloCel { display: none !important; } }
@@ -41,6 +43,7 @@
       border-right: 1px solid var(--linea); padding: 14px 10px; gap: 4px; }
     nav button { flex-direction: row; justify-content: flex-start; gap: 12px; font-size: 16px; padding: 12px 14px; min-height: 0; border-radius: 10px; }
     nav button.si { background: var(--azulFondo); }
+    nav .cuenta { position: static; margin-left: auto; font-size: 12px; padding: 2px 8px; }
     nav .pie { display: block; margin-top: auto; font-size: 13px; color: var(--suave); padding: 10px 14px; word-break: break-all; }
     main { padding: 24px 28px 48px; width: 100%; }
   }
@@ -120,6 +123,35 @@
   .giro { width: 22px; height: 22px; border: 3px solid var(--linea); border-top-color: var(--marca); border-radius: 50%; animation: g 0.8s linear infinite; display: inline-block; vertical-align: middle; }
   @keyframes g { to { transform: rotate(360deg); } }
   .entrar { max-width: 440px; margin: 6vh auto 0; }
+  .visualmente { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 899px) { .soloPc { display: none !important; } }
+  .chatGrid { display: block; }
+  @media (min-width: 900px) { .chatGrid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; } .soloCelChat { display: none !important; } }
+  .conv { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid var(--linea); padding: 12px 4px; color: var(--tinta); border-radius: 0; }
+  .conv:first-child { border-top: 0; }
+  .conv.si { background: var(--azulFondo); border-radius: 10px; }
+  .conv .txt { flex: 1; min-width: 0; }
+  .conv .nom { font-weight: 700; display: block; }
+  .conv .ult { color: var(--suave); font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv .hora { color: var(--suave); font-size: 12px; white-space: nowrap; }
+  .conv .num { background: var(--salida); color: #fff; border-radius: 999px; font-size: 12px; font-weight: 800; padding: 1px 7px; }
+  .hilo { display: flex; flex-direction: column; gap: 8px; max-height: 58vh; overflow: auto; padding: 4px 2px 8px; }
+  .globo { max-width: 82%; padding: 9px 12px; border-radius: 14px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; }
+  .globo.tr { align-self: flex-start; background: #fff; border: 1px solid var(--linea); border-bottom-left-radius: 4px; }
+  .globo.of { align-self: flex-end; background: var(--marca); color: #fff; border-bottom-right-radius: 4px; }
+  .globo .pie { display: block; font-size: 12px; opacity: .75; margin-top: 4px; }
+  .globo a { color: inherit; font-weight: 700; }
+  .globo .rep { display: inline-block; font-size: 12px; font-weight: 800; background: var(--errorFondo); color: var(--error); border-radius: 999px; padding: 1px 8px; margin-bottom: 4px; }
+  .responder { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+  .responder textarea { min-height: 52px; flex: 1; }
+  .rep .fila { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--suave); font-size: 14px; margin: 6px 0; }
+  .rep .desc { white-space: pre-wrap; margin: 8px 0; }
+  .rep .notas { white-space: pre-wrap; background: #F7F9FB; border-radius: 10px; padding: 8px 10px; font-size: 14px; color: var(--suave); margin: 8px 0; }
+  .rep a { color: var(--marca); font-weight: 700; }
+  .rep .acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .rep textarea { min-height: 60px; }
+  .rep.ACCIDENTE { border-left: 5px solid var(--error); }
+  .eti.ambar { background: var(--avisoFondo); color: var(--aviso); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -132,7 +164,8 @@
   <nav id="nav" hidden aria-label="Secciones">
     <button data-v="hoy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hoy</button>
     <button data-v="enviar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg>Enviar</button>
-    <button data-v="enviados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Enviados</button>
+    <button data-v="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Chat<span class="cuenta" id="cChat" hidden></span></button>
+    <button data-v="reportes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 22 20H2z"/><path d="M12 10v4.5"/><path d="M12 17.4v.1"/></svg>Reportes<span class="cuenta" id="cRep" hidden></span></button>
     <button data-v="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Avisos</button>
     <div class="pie"><div id="pieCorreo"></div><button class="enlace" data-a="salir">Salir</button></div>
   </nav>
@@ -150,7 +183,8 @@
     hoy: null, mensajes: null, ajustes: null, sel: {}, paso: 'correo', cargando: false, nota: null,
     borrador: { para: 'SIN_ENTRADA', tipo: 'RECORDATORIO', titulo: '', texto: '', cuando: 'ya', fecha: '', hora: '', cedulas: {}, buscar: '' }
   };
-  var reloj = null, invitacion = null;
+  var reloj = null, invitacion = null, relojCuentas = null;
+  S.chats = null; S.chatCed = ''; S.conv = null; S.reportes = null; S.filtroRep = 'PENDIENTES'; S.buscarChat = '';
   var PLANTILLAS = [
     'Recuerda marcar tu ENTRADA en la app de asistencia. Sin entrada no se cuenta tu día.',
     'Recuerda marcar tu SALIDA antes de irte de la obra. Sin salida no se cuentan tus horas.',
@@ -198,6 +232,7 @@
   function salirLocal() {
     S.token = ''; borrar('odesa_admin_token'); S.hoy = S.mensajes = S.ajustes = null; S.sel = {};
     document.getElementById('nav').hidden = true; document.getElementById('salirCel').hidden = true; pararReloj(); pEntrar();
+    if (relojCuentas) { clearInterval(relojCuentas); relojCuentas = null; } S.chats = S.conv = S.reportes = null; S.chatCed = ''; document.title = 'ODESA Panel';
   }
   function pEntrar(nota) {
     document.getElementById('nav').hidden = true;
@@ -247,17 +282,22 @@
     document.getElementById('nav').hidden = false; document.getElementById('salirCel').hidden = false;
     document.getElementById('pieCorreo').textContent = S.correo;
     ir('hoy');
+    contadores();
+    if (!relojCuentas) relojCuentas = setInterval(function () { if (document.visibilityState === 'visible' && S.token) contadores(); }, 30000);
   }
   function ir(v) {
     S.vista = v; S.nota = null; pararReloj();
+    var marcado = v === 'enviados' ? 'enviar' : v;
     Array.prototype.forEach.call(document.querySelectorAll('nav [data-v]'), function (b) {
-      b.className = b.getAttribute('data-v') === v ? 'si' : '';
-      if (b.getAttribute('data-v') === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      b.className = b.getAttribute('data-v') === marcado ? 'si' : '';
+      if (b.getAttribute('data-v') === marcado) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
     window.scrollTo(0, 0);
     if (v === 'hoy') { cargarHoy(); reloj = setInterval(function () { if (document.visibilityState === 'visible') cargarHoy(true); }, 60000); }
     if (v === 'enviar') { if (!S.hoy) cargarHoy(true, pEnviar); pEnviar(); }
     if (v === 'enviados') cargarMensajes();
+    if (v === 'chat') { cargarChats(); if (!S.hoy) cargarHoy(true, function () { if (S.vista === 'chat') pChat(); }); reloj = setInterval(function () { if (document.visibilityState === 'visible') refrescarChat(); }, 15000); }
+    if (v === 'reportes') cargarReportes();
     if (v === 'ajustes') cargarAjustes();
     pintarSel();
   }
@@ -314,7 +354,8 @@
         (/fuera de obra/i.test(p.alertas || '') ? '<span class="eti rojo">fuera de obra</span>' : '');
       h += '<li class="persona"><input type="checkbox" aria-label="Elegir a ' + esc(p.nombre) + '" data-sel="' + esc(p.cedula) + '"' + (S.sel[p.cedula] ? ' checked' : '') + '>' +
         '<div><div class="nom">' + esc(p.nombre) + etis + '</div><div class="det">' + esc(det.join(' · ')) + '</div></div>' +
-        '<div class="fin">' + (p.celular ? '<a class="wa" target="_blank" rel="noopener" href="https://wa.me/' + esc(waNumero(p.celular)) + '">WhatsApp</a>' : '') + '</div></li>';
+        '<div class="fin"><button class="wa" style="background:#fff;color:var(--marca);border-color:#BFD3E8" data-a="abrirChat" data-ced="' + esc(p.cedula) + '">Chat</button>' +
+        (p.celular ? '<a class="wa" target="_blank" rel="noopener" href="https://wa.me/' + esc(waNumero(p.celular)) + '">WhatsApp</a>' : '') + '</div></li>';
     });
     return h + '</ul></section>';
   }
@@ -334,7 +375,7 @@
   }
   function pEnviar() {
     if (S.vista !== 'enviar') return;
-    var b = S.borrador, h = '<h1>Enviar mensaje</h1><p class="sub">Llega como notificación al celular de cada persona y queda guardado en su app.</p>';
+    var b = S.borrador, h = '<div class="cab"><h1>Enviar mensaje</h1><button class="boton claro chico" data-a="verEnviados">Enviados y programados</button></div><p class="sub">Llega como notificación al celular de cada persona y queda guardado en su app.</p>';
     if (S.nota) h += '<div class="nota ' + S.nota.clase + '" role="status">' + esc(S.nota.texto) + '</div>';
     h += '<form id="fEnviar">';
     h += '<div class="tarjeta"><div class="campo"><label>Para</label><div class="opciones">';
@@ -432,7 +473,7 @@
       .catch(function (e) { if (S.vista === 'enviados') errorRed(e, 'recargarEnviados'); });
   }
   function pEnviados() {
-    var h = '<div class="cab"><h1>Enviados</h1><button class="boton claro chico" data-a="recargarEnviados">Actualizar</button></div>';
+    var h = '<p style="margin:0"><button class="enlace" data-a="volverEnviar">‹ Enviar mensaje</button></p><div class="cab"><h1>Enviados</h1><button class="boton claro chico" data-a="recargarEnviados">Actualizar</button></div>';
     if (S.nota) h += '<div class="nota ' + S.nota.clase + '" role="status">' + esc(S.nota.texto) + '</div>';
     h += '<div class="tarjeta">';
     if (!S.mensajes.length) h += '<p class="vacio">Todavía no has enviado mensajes.</p>';
@@ -493,17 +534,216 @@
     }).catch(function (e) { S.nota = { clase: 'mal', texto: 'No hubo conexión: ' + e.message }; pAjustes(); });
   }
 
+  /* ---------- Contadores (chat sin leer y reportes nuevos) ---------- */
+  function contadores() {
+    return llamar('adminContadores').then(function (r) {
+      if (!r || !r.ok) return;
+      pintarCuenta('cChat', r.chat); pintarCuenta('cRep', r.reportes);
+      var total = (r.chat || 0) + (r.reportes || 0);
+      document.title = (total ? '(' + total + ') ' : '') + 'ODESA Panel';
+      if (S.vista === 'chat' && r.chat && !S.chatOcupado) refrescarChat();
+    }).catch(function () {});
+  }
+  function pintarCuenta(id, n) { var c = document.getElementById(id); if (!c) return; c.hidden = !n; c.textContent = n > 99 ? '99+' : n; }
+
+  /* ---------- Chat ---------- */
+  function horaCorta(ms) {
+    if (!ms) return '';
+    try {
+      var hoy = new Date().toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }), d = new Date(ms);
+      return d.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' }) === hoy
+        ? d.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', minute: '2-digit' })
+        : d.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' });
+    } catch (e) { return ''; }
+  }
+  function cargarChats() {
+    if (!S.chats) cargando();
+    return llamar('adminChats').then(function (r) {
+      if (!r.ok) throw new Error(r.mensaje);
+      S.chats = r.chats;
+      if (S.vista === 'chat') { if (S.chatCed) abrirChat(S.chatCed, true); else pChat(); }
+    }).catch(function (e) { if (S.vista === 'chat') errorRed(e, 'recargarChat'); });
+  }
+  function refrescarChat() {
+    llamar('adminChats').then(function (r) {
+      if (!r.ok || S.vista !== 'chat') return;
+      S.chats = r.chats;
+      if (S.chatCed) abrirChat(S.chatCed, true); else pintarListaChats();
+    }).catch(function () {});
+  }
+  function abrirChat(ced, silencio) {
+    S.chatCed = ced;
+    if (!silencio) { S.conv = null; pChat(); }
+    return llamar('adminChat', { cedula: ced }).then(function (r) {
+      if (S.vista !== 'chat' || S.chatCed !== ced) return;
+      if (!r.ok) { S.nota = { clase: 'mal', texto: r.mensaje }; S.chatCed = ''; return pChat(); }
+      var antes = S.conv && S.conv.trabajador.cedula === ced ? S.conv.mensajes.length : -1;
+      S.conv = r;
+      (S.chats || []).forEach(function (c) { if (c.cedula === ced) c.noLeidos = 0; });
+      if (antes !== r.mensajes.length || !silencio) pChat();
+      contadores();
+    }).catch(function (e) { if (!silencio) { S.nota = { clase: 'mal', texto: 'No se pudo abrir: ' + e.message }; pChat(); } });
+  }
+  function conversaciones() {
+    var q = S.buscarChat.trim().toLowerCase(), lista = (S.chats || []).slice(), ya = {};
+    lista.forEach(function (c) { ya[c.cedula] = true; });
+    if (q) {
+      lista = lista.filter(function (c) { return c.nombre.toLowerCase().indexOf(q) >= 0; });
+      (S.hoy ? S.hoy.personas : []).forEach(function (p) {
+        if (!ya[p.cedula] && p.nombre.toLowerCase().indexOf(q) >= 0) lista.push({ cedula: p.cedula, nombre: p.nombre, noLeidos: 0, nueva: true });
+      });
+    }
+    return lista;
+  }
+  function htmlListaChats() {
+    var lista = conversaciones();
+    if (!lista.length) return '<p class="vacio">' + (S.buscarChat ? 'No hay nadie con ese nombre.' : 'Todavía no hay conversaciones. Cuando un trabajador escriba desde su app, aparece aquí. Para escribirle tú, búscalo arriba.') + '</p>';
+    return lista.map(function (c) {
+      var u = c.ultimo;
+      return '<button class="conv' + (c.cedula === S.chatCed ? ' si' : '') + '" data-a="abrirChat" data-ced="' + esc(c.cedula) + '">' +
+        '<span class="txt"><span class="nom">' + esc(c.nombre) + '</span><span class="ult">' +
+        (c.nueva ? 'Escribirle' : esc((u.deOficina ? 'Tú: ' : '') + (u.texto || (u.foto ? 'Foto' : '')))) + '</span></span>' +
+        (u ? '<span class="hora">' + esc(horaCorta(u.fecha)) + '</span>' : '') + (c.noLeidos ? '<span class="num">' + c.noLeidos + '</span>' : '') + '</button>';
+    }).join('');
+  }
+  function pintarListaChats() { var c = document.getElementById('listaChats'); if (c) c.innerHTML = htmlListaChats(); }
+  function pChat() {
+    if (S.vista !== 'chat') return;
+    var h = '', abierto = !!S.chatCed;
+    var lista = '<div class="tarjeta' + (abierto ? ' soloPc' : '') + '" id="panelLista"><input type="search" id="buscarChat" placeholder="Buscar trabajador para escribirle" value="' + esc(S.buscarChat) + '" style="margin-bottom:8px">' +
+      '<div id="listaChats">' + htmlListaChats() + '</div></div>';
+    var hilo = '';
+    if (abierto) {
+      var c = S.conv;
+      hilo = '<div class="tarjeta"><p class="soloCelChat" style="margin:0 0 6px"><button class="enlace" data-a="cerrarChat">‹ Conversaciones</button></p>';
+      if (!c) hilo += '<p class="centro"><span class="giro"></span></p>';
+      else {
+        var t = c.trabajador;
+        hilo += '<div class="cab" style="margin-bottom:6px"><div><h2>' + esc(t.nombre) + (t.avisos ? '' : '<span class="eti naranja">sin avisos</span>') + '</h2>' +
+          '<div class="ayuda" style="margin:2px 0 0">' + esc([t.cargo, 'C.C. ' + t.cedula].filter(String).join(' · ')) + '</div></div>' +
+          (t.celular ? '<a class="wa" target="_blank" rel="noopener" href="https://wa.me/' + esc(waNumero(t.celular)) + '">WhatsApp</a>' : '') + '</div>';
+        hilo += '<div class="hilo" id="hilo">' + (c.mensajes.length ? c.mensajes.map(function (m) {
+          return '<div class="globo ' + (m.deOficina ? 'of' : 'tr') + '">' + (m.reporte ? '<span class="rep">Reporte SST</span><br>' : '') + esc(m.texto) +
+            (m.foto ? (m.texto ? '\n' : '') + '<a href="' + esc(m.foto) + '" target="_blank" rel="noopener">Ver foto</a>' : '') +
+            (m.reporte ? '\n<a href="#" data-a="verReporte" data-id="' + esc(m.reporte) + '">Ver el reporte</a>' : '') +
+            '<span class="pie">' + esc(horaCorta(m.fecha)) + (m.deOficina ? ' · ' + esc(m.por || '') + (m.leido ? ' · leído' : '') : '') + '</span></div>';
+        }).join('') : '<p class="vacio">Todavía no se han escrito. Escribe abajo: le llega como notificación.</p>') + '</div>';
+        if (S.nota) hilo += '<div class="nota ' + S.nota.clase + '" role="status" style="margin:10px 0 0">' + esc(S.nota.texto) + '</div>';
+        hilo += '<form id="fChat" class="responder"><label for="resp" class="visualmente">Respuesta</label><textarea id="resp" maxlength="1000" placeholder="Escribe tu respuesta">' + esc(S.borradorChat || '') + '</textarea>' +
+          '<button class="boton" id="bResp">Enviar</button></form>';
+      }
+      hilo += '</div>';
+    }
+    h += '<div class="cab"><h1>Chat</h1><button class="boton claro chico" data-a="recargarChat">Actualizar</button></div>';
+    if (!abierto && S.nota) h += '<div class="nota ' + S.nota.clase + '">' + esc(S.nota.texto) + '</div>';
+    h += '<div class="chatGrid">' + lista + (abierto ? hilo : '<div class="tarjeta soloPc"><p class="vacio">Elige una conversación.</p></div>') + '</div>';
+    var y = window.scrollY, foco = document.activeElement && document.activeElement.id;
+    app.innerHTML = h;
+    var hl = document.getElementById('hilo'); if (hl) hl.scrollTop = hl.scrollHeight;
+    if (foco === 'buscarChat' || foco === 'resp') { var f = document.getElementById(foco); if (f) { f.focus(); try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} } }
+    window.scrollTo(0, y);
+  }
+  function responder(ev) {
+    ev.preventDefault();
+    var campo = document.getElementById('resp'), texto = campo.value.trim(), b = document.getElementById('bResp');
+    if (!texto) return campo.focus();
+    b.disabled = true; b.textContent = 'Enviando…'; S.chatOcupado = true;
+    llamar('adminChatEnviar', { cedula: S.chatCed, texto: texto }).then(function (r) {
+      S.chatOcupado = false;
+      if (!r.ok) { S.nota = { clase: 'mal', texto: r.mensaje }; S.borradorChat = texto; return pChat(); }
+      S.borradorChat = ''; S.conv.mensajes.push(r.mensaje);
+      S.nota = r.entregado ? null : { clase: 'aviso', texto: 'Quedó en su chat. No tiene los avisos activados: lo verá cuando abra la app.' };
+      (S.chats || []).forEach(function (c) { if (c.cedula === S.chatCed) c.ultimo = r.mensaje; });
+      if (!(S.chats || []).some(function (c) { return c.cedula === S.chatCed; })) S.chats.unshift({ cedula: S.chatCed, nombre: S.conv.trabajador.nombre, noLeidos: 0, ultimo: r.mensaje });
+      pChat();
+      var f = document.getElementById('resp'); if (f) f.focus();
+    }).catch(function (e) { S.chatOcupado = false; S.borradorChat = texto; S.nota = { clase: 'mal', texto: 'No hubo conexión: ' + e.message + '. No se envió.' }; pChat(); });
+  }
+
+  /* ---------- Reportes SST ---------- */
+  var COLOR_TIPO = { 'Accidente de trabajo': 'rojo', 'Incidente o casi accidente': 'naranja', 'Incapacidad médica': 'azul', 'Condición o acto inseguro': 'ambar', 'Otra novedad': 'gris' };
+  function cargarReportes() {
+    if (!S.reportes) cargando();
+    llamar('adminReportes').then(function (r) {
+      if (!r.ok) throw new Error(r.mensaje);
+      S.reportes = r.reportes;
+      if (S.vista === 'reportes') pReportes();
+    }).catch(function (e) { if (S.vista === 'reportes') errorRed(e, 'recargarReportes'); });
+  }
+  function pReportes() {
+    var todos = S.reportes, cuenta = { PENDIENTES: 0, NUEVO: 0, 'EN REVISIÓN': 0, CERRADO: 0, TODOS: todos.length };
+    todos.forEach(function (r) { cuenta[r.estado] = (cuenta[r.estado] || 0) + 1; if (r.estado !== 'CERRADO') cuenta.PENDIENTES++; });
+    var f = S.filtroRep, lista = todos.filter(function (r) { return f === 'TODOS' || (f === 'PENDIENTES' ? r.estado !== 'CERRADO' : r.estado === f); });
+    if (S.verRep) lista = todos.filter(function (r) { return r.id === S.verRep; });
+    var h = '<div class="cab"><h1>Reportes SST</h1><button class="boton claro chico" data-a="recargarReportes">Actualizar</button></div>' +
+      '<p class="sub">Accidentes, incidentes, incapacidades y novedades que reportan los trabajadores desde su app. También están en la pestaña «Reportes SST» de la hoja.</p>';
+    if (S.nota) h += '<div class="nota ' + S.nota.clase + '" role="status">' + esc(S.nota.texto) + '</div>';
+    if (S.verRep) h += '<p><button class="enlace" data-a="todosRep">‹ Ver todos los reportes</button></p>';
+    else {
+      h += '<div class="chips" style="margin:0 0 14px">' + [['PENDIENTES', 'Pendientes'], ['NUEVO', 'Nuevos'], ['EN REVISIÓN', 'En revisión'], ['CERRADO', 'Cerrados'], ['TODOS', 'Todos']].map(function (x) {
+        return '<button class="chip"' + (f === x[0] ? ' style="background:var(--marca);color:#fff;border-color:var(--marca)" aria-pressed="true"' : ' aria-pressed="false"') +
+          ' data-a="filtroRep" data-f="' + x[0] + '">' + x[1] + ' (' + (cuenta[x[0]] || 0) + ')</button>';
+      }).join('') + '</div>';
+    }
+    if (!lista.length) h += '<div class="tarjeta"><p class="vacio">' + (todos.length ? 'No hay reportes en este grupo.' : 'Todavía no hay reportes.') + '</p></div>';
+    lista.forEach(function (r) {
+      var estado = r.estado === 'NUEVO' ? '<span class="eti rojo">Nuevo</span>' : r.estado === 'CERRADO' ? '<span class="eti verde">Cerrado</span>' : '<span class="eti azul">En revisión</span>';
+      var datos = [];
+      if (r.obra) datos.push('Obra: ' + r.obra);
+      if (r.dias) datos.push(r.dias + ' días de incapacidad' + (r.desde ? ' desde ' + fechaCorta(r.desde) : ''));
+      else datos.push('Cuándo: ' + fechaMs(r.hecho));
+      if (r.lesionados) datos.push('Lesionados: ' + (r.lesionados === 'SI' ? 'sí' : 'no'));
+      h += '<section class="tarjeta rep ' + (r.tipo === 'Accidente de trabajo' ? 'ACCIDENTE' : '') + '">' +
+        '<div><span class="eti ' + (COLOR_TIPO[r.tipo] || 'gris') + '" style="margin-left:0">' + esc(r.tipo) + '</span>' + estado + '</div>' +
+        '<h2 style="margin-top:8px">' + esc(r.nombre) + '</h2><div class="fila"><span>' + esc([r.cargo, 'C.C. ' + r.cedula].filter(String).join(' · ')) + '</span><span>Reportado ' + esc(fechaMs(r.fecha)) + '</span></div>' +
+        '<div class="fila">' + datos.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
+        (r.afectado || r.lesion ? '<div class="fila"><span><b>Afectado:</b> ' + esc(r.afectado || '—') + '</span><span><b>Lesión:</b> ' + esc(r.lesion || '—') + '</span></div>' : '') +
+        '<div class="desc">' + esc(r.descripcion) + '</div>' +
+        '<div class="fila">' + (r.foto ? '<a href="' + esc(r.foto) + '" target="_blank" rel="noopener">Ver foto</a>' : '<span>Sin foto</span>') +
+        (r.ubicacion ? '<a href="' + esc(r.ubicacion) + '" target="_blank" rel="noopener">Ver ubicación</a>' : '') + '</div>' +
+        (r.notas ? '<div class="notas">' + esc(r.notas) + '</div>' : '') +
+        (r.estado === 'CERRADO' ? '<div class="fila"><span>Cerrado ' + esc(fechaMs(r.cerrado)) + (r.atendio ? ' por ' + esc(r.atendio) : '') + '</span></div>' : '') +
+        '<label for="n' + esc(r.id) + '" class="visualmente">Nota</label><textarea id="n' + esc(r.id) + '" maxlength="1000" placeholder="Nota de seguimiento (opcional): qué se hizo, si se reportó a la ARL…"></textarea>' +
+        '<div class="acc">' +
+        (r.estado === 'NUEVO' ? '<button class="boton chico" data-a="estadoRep" data-id="' + esc(r.id) + '" data-e="EN REVISIÓN">Pasar a revisión</button>' : '') +
+        (r.estado !== 'CERRADO' ? '<button class="boton chico verde" data-a="estadoRep" data-id="' + esc(r.id) + '" data-e="CERRADO">Cerrar</button>' :
+          '<button class="boton claro chico" data-a="estadoRep" data-id="' + esc(r.id) + '" data-e="EN REVISIÓN">Reabrir</button>') +
+        (r.estado !== 'NUEVO' ? '<button class="boton claro chico" data-a="estadoRep" data-id="' + esc(r.id) + '" data-e="' + esc(r.estado) + '">Solo guardar la nota</button>' : '') +
+        '<button class="boton claro chico" data-a="abrirChat" data-ced="' + esc(r.cedula) + '">Escribirle por el chat</button></div></section>';
+    });
+    app.innerHTML = h;
+  }
+  function fechaCorta(ms) { try { return new Date(ms).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return ''; } }
+  function cambiarEstado(n) {
+    var id = n.getAttribute('data-id'), estado = n.getAttribute('data-e'), nota = (document.getElementById('n' + id) || {}).value || '';
+    n.disabled = true;
+    llamar('adminReporteEstado', { id: id, estado: estado, nota: nota }).then(function (r) {
+      S.nota = r.ok ? { clase: 'ok', texto: estado === 'CERRADO' ? 'Reporte cerrado.' : nota.trim() && n.textContent === 'Solo guardar la nota' ? 'Nota guardada.' : 'Reporte en revisión.' } : { clase: 'mal', texto: r.mensaje };
+      contadores(); cargarReportes(); window.scrollTo(0, 0);
+    }).catch(function (e) { n.disabled = false; S.nota = { clase: 'mal', texto: 'No hubo conexión: ' + e.message }; pReportes(); });
+  }
+
   /* ---------- Eventos ---------- */
   document.addEventListener('click', function (ev) {
     var n = ev.target.closest('[data-v],[data-a]');
     if (!n) return;
-    if (n.hasAttribute('data-v')) return ir(n.getAttribute('data-v'));
+    if (n.hasAttribute('data-v')) { if (n.getAttribute('data-v') === 'chat') { S.chatCed = ''; S.conv = null; } S.verRep = ''; return ir(n.getAttribute('data-v')); }
     var a = n.getAttribute('data-a');
     if (a === 'otroCorreo') { S.paso = 'correo'; pEntrar(); }
     else if (a === 'salir') { llamar('adminSalir').catch(function () {}); salirLocal(); }
     else if (a === 'recargarHoy') cargarHoy();
     else if (a === 'recargarEnviados') cargarMensajes();
     else if (a === 'recargarAjustes') cargarAjustes();
+    else if (a === 'verEnviados') ir('enviados');
+    else if (a === 'volverEnviar') ir('enviar');
+    else if (a === 'recargarChat') { S.nota = null; cargarChats(); }
+    else if (a === 'abrirChat') { ev.preventDefault(); S.nota = null; S.borradorChat = ''; if (S.vista !== 'chat') { S.chatCed = n.getAttribute('data-ced'); ir('chat'); } else abrirChat(n.getAttribute('data-ced')); }
+    else if (a === 'cerrarChat') { S.chatCed = ''; S.conv = null; S.nota = null; pChat(); }
+    else if (a === 'verReporte') { ev.preventDefault(); S.verRep = n.getAttribute('data-id'); ir('reportes'); }
+    else if (a === 'todosRep') { S.verRep = ''; pReportes(); }
+    else if (a === 'recargarReportes') { S.nota = null; cargarReportes(); }
+    else if (a === 'filtroRep') { S.filtroRep = n.getAttribute('data-f'); S.nota = null; pReportes(); }
+    else if (a === 'estadoRep') cambiarEstado(n);
     else if (a === 'rapido') {
       S.borrador = { para: n.getAttribute('data-para'), tipo: 'RECORDATORIO', titulo: '', texto: PLANTILLAS[+n.getAttribute('data-p')], cuando: 'ya', fecha: '', hora: '', cedulas: {}, buscar: '' };
       ir('enviar');
@@ -537,6 +777,8 @@
       document.getElementById('cuenta').textContent = b.texto.length;
       document.getElementById('vTitulo').textContent = 'ODESA: ' + (b.titulo || TITULO_DEF[b.tipo]);
       document.getElementById('vTexto').textContent = b.texto || 'Tu mensaje…';
+    } else if (t.id === 'buscarChat') { S.buscarChat = t.value; pintarListaChats();
+    } else if (t.id === 'resp') { S.borradorChat = t.value;
     } else if (t.id === 'buscar') { S.borrador.buscar = t.value; document.getElementById('elegir').innerHTML = listaElegir(); }
   });
   function actualizarConteo() {
@@ -548,6 +790,10 @@
     else if (ev.target.id === 'fCodigo') entrar(ev);
     else if (ev.target.id === 'fEnviar') enviar(ev);
     else if (ev.target.id === 'fAjustes') guardarAjustes(ev);
+    else if (ev.target.id === 'fChat') responder(ev);
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && !ev.shiftKey && ev.target.id === 'resp' && window.matchMedia('(pointer: fine)').matches) { ev.preventDefault(); responder(ev); }
   });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.token && S.vista === 'hoy') cargarHoy(true); });
 
