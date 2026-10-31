@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "ODESA Panel del administrador",
+  "short_name": "ODESA Panel",
+  "description": "Panel del administrador de Asistencia ODESA: estado del día, mensajes y anuncios a los trabajadores.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF2F6",
+  "theme_color": "#0A1626",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

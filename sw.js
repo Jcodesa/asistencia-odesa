@@ -35,14 +35,17 @@ function consultarTexto() {
 self.addEventListener('push', function (ev) {
   ev.waitUntil(consultarTexto().then(function (t) {
     if (!t || !t.titulo) t = textoPorHora();
+    // Un mensaje o anuncio de la oficina no reemplaza al aviso de marcar ni a otro mensaje.
+    var msj = t.mensaje === true;
     return self.registration.showNotification(t.titulo, {
       body: t.cuerpo || '',
       icon: 'icono-192.png',
       badge: 'insignia.png',
-      tag: 'odesa-asistencia',
+      tag: msj ? 'odesa-mensaje-' + Date.now() : 'odesa-asistencia',
       renotify: true,
       requireInteraction: true,
-      vibrate: [500, 250, 500, 250, 500]
+      vibrate: [600, 200, 600, 200, 600, 200, 900],
+      actions: [msj ? { action: 'ver', title: 'Ver mensaje' } : { action: 'marcar', title: 'Marcar ahora' }]
     });
   }));
 });

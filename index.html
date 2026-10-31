@@ -63,6 +63,8 @@
   .estado.mal { background: var(--errorFondo); color: var(--error); display: block; }
   .estado.aviso { background: var(--avisoFondo); color: var(--aviso); }
   .estado.mal .boton { margin-top: 10px; }
+  .estado.mal ol { margin: 8px 0 0; padding-left: 22px; font-weight: 500; }
+  .estado.mal li { margin-bottom: 6px; }
   .giro { width: 20px; height: 20px; flex: none; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: giro 0.9s linear infinite; }
   @keyframes giro { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .giro { animation-duration: 3s; } }
@@ -94,6 +96,14 @@
   .renglon { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--entrada); font-weight: 600; font-size: 16px; padding: 4px 2px; }
   .renglon .enlace { padding: 8px 4px; white-space: nowrap; }
   .nota { font-size: 15px; color: var(--suave); text-align: center; margin: 6px 0 0; }
+  .mensajesOdesa { list-style: none; margin: 0; padding: 0; }
+  .msjOdesa { padding: 10px 0; border-top: 1px solid var(--linea, #D3DBE4); }
+  .msjOdesa:first-child { border-top: 0; padding-top: 0; }
+  .msjOdesa.nuevo { background: #FFF8E6; margin: 0 -12px; padding: 10px 12px; border-radius: 10px; }
+  .msjCab { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .nuevoEti { background: #B8400C; color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 8px; flex: none; }
+  .msjTxt { white-space: pre-wrap; margin: 4px 0; }
+  .msjFecha { font-size: 14px; color: var(--suave); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -421,11 +431,27 @@
       });
       h += '</ul></div>';
     }
+    h += tarjetaMensajes(d.mensajes || []);
     h += '<div class="avisos" id="avisos"></div>';
     h += '<p class="centro"><button class="enlace" data-a="cambiar">No soy ' + esc(primerNombre(t.nombre)) + '</button></p>';
     pintar(h);
     pintarAvisos();
     if (d.abierta && !t.inactivo) { tictac(); tic = setInterval(tictac, 1000); }
+  }
+
+  // Mensajes y anuncios que la oficina envió desde el panel del administrador (últimos 14 días).
+  function tarjetaMensajes(lista) {
+    if (!lista.length) return '';
+    var visto = Number(leer('odesa_msj_visto')) || 0, nuevo = 0, h = '';
+    lista.forEach(function (m) {
+      var es = m.fecha > visto; if (es) nuevo = Math.max(nuevo, m.fecha);
+      var cuando = '';
+      try { cuando = new Date(m.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) {}
+      h += '<li class="msjOdesa' + (es ? ' nuevo' : '') + '"><div class="msjCab"><strong>' + esc(m.titulo) + '</strong>' + (es ? '<span class="nuevoEti">Nuevo</span>' : '') + '</div>' +
+        '<div class="msjTxt">' + esc(m.texto) + '</div><div class="msjFecha">' + esc(cuando) + '</div></li>';
+    });
+    if (nuevo) guardar('odesa_msj_visto', String(nuevo));
+    return '<div class="tarjeta" style="margin-top:14px"><h2>Mensajes de la oficina</h2><ul class="mensajesOdesa">' + h + '</ul></div>';
   }
 
   function pMarcar() {
@@ -449,7 +475,8 @@
     if (E.gpsEstado === 'ok') {
       c.innerHTML = '<div class="estado ok">✓ Ubicación lista <small>(precisión ±' + Math.round(E.gps.precision) + ' m)</small></div>';
     } else if (E.gpsEstado === 'mal') {
-      c.innerHTML = '<div class="estado mal">' + esc(E.gpsError) +
+      var pasos = (E.gpsPasos || []).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('');
+      c.innerHTML = '<div class="estado mal">' + esc(E.gpsError) + (pasos ? '<ol>' + pasos + '</ol>' : '') +
         '<button class="boton claro" data-a="gps">Buscar ubicación otra vez</button></div>';
     } else {
       c.innerHTML = '<div class="estado espera"><span class="giro"></span><span>Buscando tu ubicación…</span></div>';
@@ -559,9 +586,29 @@
 
   function gpsFallo(e) {
     E.gpsEstado = 'mal';
-    E.gpsError = (e && e.code === 1)
-      ? 'El celular no dio permiso de ubicación. Cuando aparezca el aviso, toca «Permitir».'
-      : 'No se pudo leer la ubicación. Enciende el GPS (ubicación) del celular y sal a un lugar despejado.';
+    E.gpsPasos = null;
+    if (e && e.code === 1) {
+      // Permiso negado: el celular ya no vuelve a preguntar solo, así que se explica dónde activarlo.
+      if (ES_IPHONE) {
+        E.gpsError = 'El iPhone tiene bloqueada la ubicación para esta página. Actívala así:';
+        E.gpsPasos = [
+          'Abre Ajustes del iPhone › Privacidad y seguridad › Localización, y revisa que esté encendida.',
+          'En esa misma lista entra a «Sitios web de Safari» y elige «Al usar la app».',
+          'Vuelve aquí, toca «Buscar ubicación otra vez» y luego «Permitir».',
+          'Si no aparece el aviso, cierra esta página y abre la app de nuevo.'
+        ];
+      } else {
+        E.gpsError = 'El celular tiene bloqueada la ubicación para esta página. Actívala así:';
+        E.gpsPasos = [
+          'Toca el candado o el ícono que está junto a la dirección, arriba de la pantalla.',
+          'Entra a «Permisos» › «Ubicación» y elige «Permitir».',
+          'Revisa que la ubicación (GPS) del celular esté encendida.',
+          'Vuelve aquí y toca «Buscar ubicación otra vez».'
+        ];
+      }
+    } else {
+      E.gpsError = 'No se pudo leer la ubicación. Enciende el GPS (ubicación) del celular y sal a un lugar despejado.';
+    }
     pintarGps();
   }
 
