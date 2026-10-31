@@ -184,7 +184,7 @@
     borrador: { para: 'SIN_ENTRADA', tipo: 'RECORDATORIO', titulo: '', texto: '', cuando: 'ya', fecha: '', hora: '', cedulas: {}, buscar: '' }
   };
   var reloj = null, invitacion = null, relojCuentas = null;
-  S.chats = null; S.chatCed = ''; S.conv = null; S.reportes = null; S.filtroRep = 'PENDIENTES'; S.buscarChat = '';
+  S.chats = null; S.chatCed = ''; S.chatPer = false; S.conv = null; S.miNombre = ''; S.editNombre = false; S.reportes = null; S.filtroRep = 'PENDIENTES'; S.buscarChat = '';
   var PLANTILLAS = [
     'Recuerda marcar tu ENTRADA en la app de asistencia. Sin entrada no se cuenta tu día.',
     'Recuerda marcar tu SALIDA antes de irte de la obra. Sin salida no se cuentan tus horas.',
@@ -539,6 +539,7 @@
     return llamar('adminContadores').then(function (r) {
       if (!r || !r.ok) return;
       pintarCuenta('cChat', r.chat); pintarCuenta('cRep', r.reportes);
+      if (r.miNombre && r.miNombre !== S.miNombre) { S.miNombre = r.miNombre; var mn = document.getElementById('miNombre'); if (mn) mn.textContent = r.miNombre; }
       var total = (r.chat || 0) + (r.reportes || 0);
       document.title = (total ? '(' + total + ') ' : '') + 'ODESA Panel';
       if (S.vista === 'chat' && r.chat && !S.chatOcupado) refrescarChat();
@@ -561,32 +562,33 @@
     return llamar('adminChats').then(function (r) {
       if (!r.ok) throw new Error(r.mensaje);
       S.chats = r.chats;
-      if (S.vista === 'chat') { if (S.chatCed) abrirChat(S.chatCed, true); else pChat(); }
+      if (S.vista === 'chat') { if (S.chatCed) abrirChat(S.chatCed, true, S.chatPer); else pChat(); }
     }).catch(function (e) { if (S.vista === 'chat') errorRed(e, 'recargarChat'); });
   }
   function refrescarChat() {
     llamar('adminChats').then(function (r) {
       if (!r.ok || S.vista !== 'chat') return;
       S.chats = r.chats;
-      if (S.chatCed) abrirChat(S.chatCed, true); else pintarListaChats();
+      if (S.chatCed) abrirChat(S.chatCed, true, S.chatPer); else pintarListaChats();
     }).catch(function () {});
   }
-  function abrirChat(ced, silencio) {
-    S.chatCed = ced;
+  function abrirChat(ced, silencio, per) {
+    per = !!per;
+    S.chatCed = ced; S.chatPer = per;
     if (!silencio) { S.conv = null; pChat(); }
-    return llamar('adminChat', { cedula: ced }).then(function (r) {
-      if (S.vista !== 'chat' || S.chatCed !== ced) return;
+    return llamar('adminChat', { cedula: ced, personal: per }).then(function (r) {
+      if (S.vista !== 'chat' || S.chatCed !== ced || S.chatPer !== per) return;
       if (!r.ok) { S.nota = { clase: 'mal', texto: r.mensaje }; S.chatCed = ''; return pChat(); }
-      var antes = S.conv && S.conv.trabajador.cedula === ced ? S.conv.mensajes.length : -1;
+      var antes = S.conv && S.conv.trabajador.cedula === ced && S.conv.personal === per ? S.conv.mensajes.length + '/' + S.conv.otroNoLeidos : -1;
       S.conv = r;
-      (S.chats || []).forEach(function (c) { if (c.cedula === ced) c.noLeidos = 0; });
-      if (antes !== r.mensajes.length || !silencio) pChat();
+      (S.chats || []).forEach(function (c) { if (c.cedula === ced && !!c.personal === per) c.noLeidos = 0; });
+      if (antes !== r.mensajes.length + '/' + r.otroNoLeidos || !silencio) pChat();
       contadores();
     }).catch(function (e) { if (!silencio) { S.nota = { clase: 'mal', texto: 'No se pudo abrir: ' + e.message }; pChat(); } });
   }
   function conversaciones() {
     var q = S.buscarChat.trim().toLowerCase(), lista = (S.chats || []).slice(), ya = {};
-    lista.forEach(function (c) { ya[c.cedula] = true; });
+    lista.forEach(function (c) { if (!c.personal) ya[c.cedula] = true; });
     if (q) {
       lista = lista.filter(function (c) { return c.nombre.toLowerCase().indexOf(q) >= 0; });
       (S.hoy ? S.hoy.personas : []).forEach(function (p) {
@@ -600,8 +602,9 @@
     if (!lista.length) return '<p class="vacio">' + (S.buscarChat ? 'No hay nadie con ese nombre.' : 'Todavía no hay conversaciones. Cuando un trabajador escriba desde su app, aparece aquí. Para escribirle tú, búscalo arriba.') + '</p>';
     return lista.map(function (c) {
       var u = c.ultimo;
-      return '<button class="conv' + (c.cedula === S.chatCed ? ' si' : '') + '" data-a="abrirChat" data-ced="' + esc(c.cedula) + '">' +
-        '<span class="txt"><span class="nom">' + esc(c.nombre) + '</span><span class="ult">' +
+      var si = c.cedula === S.chatCed && !!c.personal === S.chatPer;
+      return '<button class="conv' + (si ? ' si' : '') + '" data-a="abrirChat" data-ced="' + esc(c.cedula) + '" data-per="' + (c.personal ? '1' : '') + '">' +
+        '<span class="txt"><span class="nom">' + esc(c.nombre) + (c.personal ? ' <span class="eti azul">Personal</span>' : '') + '</span><span class="ult">' +
         (c.nueva ? 'Escribirle' : esc((u.deOficina ? 'Tú: ' : '') + (u.texto || (u.foto ? 'Foto' : '')))) + '</span></span>' +
         (u ? '<span class="hora">' + esc(horaCorta(u.fecha)) + '</span>' : '') + (c.noLeidos ? '<span class="num">' + c.noLeidos + '</span>' : '') + '</button>';
     }).join('');
@@ -622,11 +625,15 @@
         hilo += '<div class="cab" style="margin-bottom:6px"><div><h2>' + esc(t.nombre) + (t.avisos ? '' : '<span class="eti naranja">sin avisos</span>') + '</h2>' +
           '<div class="ayuda" style="margin:2px 0 0">' + esc([t.cargo, 'C.C. ' + t.cedula].filter(String).join(' · ')) + '</div></div>' +
           (t.celular ? '<a class="wa" target="_blank" rel="noopener" href="https://wa.me/' + esc(waNumero(t.celular)) + '">WhatsApp</a>' : '') + '</div>';
+        hilo += '<div class="segm" style="grid-template-columns:1fr 1fr;margin:4px 0 6px" role="group" aria-label="Conversación">' +
+          '<button type="button" data-a="cambiarHilo" data-per="" class="' + (c.personal ? '' : 'si') + '" aria-pressed="' + !c.personal + '">General' + (c.personal && c.otroNoLeidos ? ' (' + c.otroNoLeidos + ')' : '') + '</button>' +
+          '<button type="button" data-a="cambiarHilo" data-per="1" class="' + (c.personal ? 'si' : '') + '" aria-pressed="' + c.personal + '">Personal' + (!c.personal && c.otroNoLeidos ? ' (' + c.otroNoLeidos + ')' : '') + '</button></div>' +
+          '<p class="ayuda" style="margin:0 0 8px">' + (c.personal ? 'Solo tú y ' + esc(t.nombre.split(' ')[0]) + ' ven esta conversación.' : 'Todos los administradores ven esta conversación con toda la oficina.') + '</p>';
         hilo += '<div class="hilo" id="hilo">' + (c.mensajes.length ? c.mensajes.map(function (m) {
           return '<div class="globo ' + (m.deOficina ? 'of' : 'tr') + '">' + (m.reporte ? '<span class="rep">Reporte SST</span><br>' : '') + esc(m.texto) +
             (m.foto ? (m.texto ? '\n' : '') + '<a href="' + esc(m.foto) + '" target="_blank" rel="noopener">Ver foto</a>' : '') +
             (m.reporte ? '\n<a href="#" data-a="verReporte" data-id="' + esc(m.reporte) + '">Ver el reporte</a>' : '') +
-            '<span class="pie">' + esc(horaCorta(m.fecha)) + (m.deOficina ? ' · ' + esc(m.por || '') + (m.leido ? ' · leído' : '') : '') + '</span></div>';
+            '<span class="pie">' + esc(horaCorta(m.fecha)) + (m.deOficina ? ' · ' + esc(m.porNombre || m.por || '') + (m.leido ? ' · leído' : '') : '') + '</span></div>';
         }).join('') : '<p class="vacio">Todavía no se han escrito. Escribe abajo: le llega como notificación.</p>') + '</div>';
         if (S.nota) hilo += '<div class="nota ' + S.nota.clase + '" role="status" style="margin:10px 0 0">' + esc(S.nota.texto) + '</div>';
         hilo += '<form id="fChat" class="responder"><label for="resp" class="visualmente">Respuesta</label><textarea id="resp" maxlength="1000" placeholder="Escribe tu respuesta">' + esc(S.borradorChat || '') + '</textarea>' +
@@ -635,6 +642,10 @@
       hilo += '</div>';
     }
     h += '<div class="cab"><h1>Chat</h1><button class="boton claro chico" data-a="recargarChat">Actualizar</button></div>';
+    h += S.editNombre
+      ? '<form id="fNombre" class="tarjeta" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:200px"><label for="nNombre">Tu nombre en el chat</label>' +
+        '<input id="nNombre" type="text" maxlength="40" value="' + esc(S.miNombre) + '"></div><button class="boton">Guardar</button><button type="button" class="enlace" data-a="nombreCancelar">Cancelar</button></form>'
+      : '<p class="sub" style="margin-top:-6px">Los trabajadores te ven como <b id="miNombre">' + esc(S.miNombre || '…') + '</b> · <button class="enlace" style="padding:0" data-a="nombreEditar">Cambiar</button></p>';
     if (!abierto && S.nota) h += '<div class="nota ' + S.nota.clase + '">' + esc(S.nota.texto) + '</div>';
     h += '<div class="chatGrid">' + lista + (abierto ? hilo : '<div class="tarjeta soloPc"><p class="vacio">Elige una conversación.</p></div>') + '</div>';
     var y = window.scrollY, foco = document.activeElement && document.activeElement.id;
@@ -648,13 +659,15 @@
     var campo = document.getElementById('resp'), texto = campo.value.trim(), b = document.getElementById('bResp');
     if (!texto) return campo.focus();
     b.disabled = true; b.textContent = 'Enviando…'; S.chatOcupado = true;
-    llamar('adminChatEnviar', { cedula: S.chatCed, texto: texto }).then(function (r) {
+    var per = S.chatPer;
+    llamar('adminChatEnviar', { cedula: S.chatCed, texto: texto, personal: per }).then(function (r) {
       S.chatOcupado = false;
       if (!r.ok) { S.nota = { clase: 'mal', texto: r.mensaje }; S.borradorChat = texto; return pChat(); }
       S.borradorChat = ''; S.conv.mensajes.push(r.mensaje);
       S.nota = r.entregado ? null : { clase: 'aviso', texto: 'Quedó en su chat. No tiene los avisos activados: lo verá cuando abra la app.' };
-      (S.chats || []).forEach(function (c) { if (c.cedula === S.chatCed) c.ultimo = r.mensaje; });
-      if (!(S.chats || []).some(function (c) { return c.cedula === S.chatCed; })) S.chats.unshift({ cedula: S.chatCed, nombre: S.conv.trabajador.nombre, noLeidos: 0, ultimo: r.mensaje });
+      var mismo = function (c) { return c.cedula === S.chatCed && !!c.personal === per; };
+      (S.chats || []).forEach(function (c) { if (mismo(c)) c.ultimo = r.mensaje; });
+      if (!(S.chats || []).some(mismo)) S.chats.unshift({ cedula: S.chatCed, nombre: S.conv.trabajador.nombre, personal: per, noLeidos: 0, ultimo: r.mensaje });
       pChat();
       var f = document.getElementById('resp'); if (f) f.focus();
     }).catch(function (e) { S.chatOcupado = false; S.borradorChat = texto; S.nota = { clase: 'mal', texto: 'No hubo conexión: ' + e.message + '. No se envió.' }; pChat(); });
@@ -727,7 +740,7 @@
   document.addEventListener('click', function (ev) {
     var n = ev.target.closest('[data-v],[data-a]');
     if (!n) return;
-    if (n.hasAttribute('data-v')) { if (n.getAttribute('data-v') === 'chat') { S.chatCed = ''; S.conv = null; } S.verRep = ''; return ir(n.getAttribute('data-v')); }
+    if (n.hasAttribute('data-v')) { if (n.getAttribute('data-v') === 'chat') { S.chatCed = ''; S.chatPer = false; S.conv = null; } S.verRep = ''; return ir(n.getAttribute('data-v')); }
     var a = n.getAttribute('data-a');
     if (a === 'otroCorreo') { S.paso = 'correo'; pEntrar(); }
     else if (a === 'salir') { llamar('adminSalir').catch(function () {}); salirLocal(); }
@@ -737,7 +750,10 @@
     else if (a === 'verEnviados') ir('enviados');
     else if (a === 'volverEnviar') ir('enviar');
     else if (a === 'recargarChat') { S.nota = null; cargarChats(); }
-    else if (a === 'abrirChat') { ev.preventDefault(); S.nota = null; S.borradorChat = ''; if (S.vista !== 'chat') { S.chatCed = n.getAttribute('data-ced'); ir('chat'); } else abrirChat(n.getAttribute('data-ced')); }
+    else if (a === 'abrirChat') { ev.preventDefault(); S.nota = null; S.borradorChat = ''; var per = n.getAttribute('data-per') === '1'; if (S.vista !== 'chat') { S.chatCed = n.getAttribute('data-ced'); S.chatPer = per; ir('chat'); } else abrirChat(n.getAttribute('data-ced'), false, per); }
+    else if (a === 'cambiarHilo') { S.nota = null; S.borradorChat = ''; abrirChat(S.chatCed, false, n.getAttribute('data-per') === '1'); }
+    else if (a === 'nombreEditar') { S.editNombre = true; pChat(); var nn = document.getElementById('nNombre'); if (nn) nn.focus(); }
+    else if (a === 'nombreCancelar') { S.editNombre = false; pChat(); }
     else if (a === 'cerrarChat') { S.chatCed = ''; S.conv = null; S.nota = null; pChat(); }
     else if (a === 'verReporte') { ev.preventDefault(); S.verRep = n.getAttribute('data-id'); ir('reportes'); }
     else if (a === 'todosRep') { S.verRep = ''; pReportes(); }
@@ -791,6 +807,13 @@
     else if (ev.target.id === 'fEnviar') enviar(ev);
     else if (ev.target.id === 'fAjustes') guardarAjustes(ev);
     else if (ev.target.id === 'fChat') responder(ev);
+    else if (ev.target.id === 'fNombre') {
+      ev.preventDefault();
+      llamar('adminMiNombre', { nombre: document.getElementById('nNombre').value }).then(function (r) {
+        if (!r.ok) { S.nota = { clase: 'mal', texto: r.mensaje }; return pChat(); }
+        S.miNombre = r.miNombre; S.editNombre = false; S.nota = { clase: 'ok', texto: 'Listo: los trabajadores te verán como ' + r.miNombre + '.' }; pChat();
+      }).catch(function (e) { S.nota = { clase: 'mal', texto: e.message }; pChat(); });
+    }
   });
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Enter' && !ev.shiftKey && ev.target.id === 'resp' && window.matchMedia('(pointer: fine)').matches) { ev.preventDefault(); responder(ev); }

@@ -732,9 +732,10 @@
   }
 
   function irChat() {
-    E.vista = 'chat'; E.chatFoto = '';
+    E.vista = 'chat'; E.chatFoto = ''; E.chat = null; E.chatPara = leer('odesa_chat_para'); E.chatElegido = false;
     pintar('<p class="volverArriba"><button class="enlace" data-a="volver">‹ Volver</button></p>' +
       '<h1>Chat con la oficina</h1><p class="fecha">Escribe lo que necesites. Te responden aquí y te llega un aviso.</p>' +
+      '<div class="tarjeta"><h2>¿A quién le escribes?</h2><div class="chips" id="hilos" role="group" aria-label="A quién le escribes"></div><p class="nota" id="hiloNota" style="text-align:left;margin-top:8px"></p></div>' +
       '<div id="falta"></div><div class="hilo" id="hilo" aria-live="polite"><div class="estado espera"><span class="giro"></span>Cargando la conversación…</div></div>' +
       '<div class="redactar"><div id="adjVista"></div><label for="chatTxt" class="visualmente">Mensaje</label>' +
       '<textarea id="chatTxt" maxlength="1000" placeholder="Escribe tu mensaje"></textarea>' +
@@ -745,24 +746,48 @@
   }
 
   function cargarChat(primera) {
-    return llamar('chatLeer', { cedula: E.cedula }).then(function (r) {
-      if (E.vista !== 'chat') return;
+    var pedido = E.chatPara;
+    return llamar('chatLeer', { cedula: E.cedula, para: pedido }).then(function (r) {
+      if (E.vista !== 'chat' || pedido !== E.chatPara) return;
       if (!r || !r.ok) return mostrarFalta((r && r.mensaje) || 'No se pudo abrir el chat.');
-      var antes = (E.chat || []).length;
+      E.hilos = r.hilos || [];
+      if (!E.hilos.some(function (h) { return h.para === E.chatPara; })) { E.chatPara = ''; guardar('odesa_chat_para', ''); return cargarChat(true); }
+      // Al entrar, si otra conversación tiene respuestas sin leer, se abre esa.
+      var conRespuesta = E.hilos.filter(function (h) { return h.noLeidos && h.para !== E.chatPara; })[0];
+      if (primera && !E.chatElegido && conRespuesta && !r.mensajes.some(function (m) { return m.deOficina && !m.leido; })) {
+        E.chatElegido = true; E.chatPara = conRespuesta.para; return cargarChat(true);
+      }
+      var antes = E.chat ? E.chat.length : -1;
       E.chat = r.mensajes;
-      if (E.datos.chat) E.datos.chat.noLeidos = 0;
+      if (E.datos.chat) E.datos.chat.noLeidos = E.hilos.reduce(function (n, h) { return n + (h.noLeidos || 0); }, 0);
+      pintarHilos();
       if (primera || r.mensajes.length !== antes) pintarHilo(true);
     }).catch(function () { if (primera && E.vista === 'chat') mostrarFalta('No hay conexión. Revisa tus datos e intenta otra vez.'); });
   }
 
+  function hiloActual() { return (E.hilos || []).filter(function (h) { return h.para === E.chatPara; })[0] || { para: '', nombre: 'Toda la oficina' }; }
+  function pintarHilos() {
+    var c = document.getElementById('hilos'); if (!c) return;
+    c.innerHTML = (E.hilos || []).map(function (h) {
+      var si = h.para === E.chatPara;
+      return '<button class="chip' + (si ? ' si' : '') + '" data-a="hilo" data-v="' + esc(h.para) + '" aria-pressed="' + si + '">' + esc(h.nombre) +
+        (h.noLeidos && !si ? ' <span class="burbuja" style="background:var(--salida);color:#fff">' + h.noLeidos + '</span>' : '') + '</button>';
+    }).join('');
+    var n = document.getElementById('hiloNota'), h = hiloActual();
+    if (n) n.textContent = h.para ? 'Conversación personal: solo la ve ' + h.nombre + '.' : 'La ven todos los administradores de la oficina. El primero que pueda te responde.';
+    var t = document.getElementById('chatTxt'); if (t) t.placeholder = h.para ? 'Escríbele a ' + h.nombre : 'Escribe tu mensaje para la oficina';
+  }
+
   function pintarHilo(bajar) {
     var c = document.getElementById('hilo'); if (!c) return;
+    if (!E.chat) return;
     if (!E.chat.length) {
-      c.innerHTML = '<div class="tarjeta"><p style="margin:0">Todavía no hay mensajes. Escribe abajo y la oficina te responde aquí.</p></div>';
+      var h = hiloActual();
+      c.innerHTML = '<div class="tarjeta"><p style="margin:0">' + (h.para ? 'Todavía no le has escrito a ' + esc(h.nombre) + '. Escribe abajo: solo lo verá esa persona.' : 'Todavía no hay mensajes. Escribe abajo y la oficina te responde aquí.') + '</p></div>';
       return;
     }
     c.innerHTML = E.chat.map(function (m) {
-      return '<div class="globo ' + (m.deOficina ? 'ofi' : 'yo') + '">' + (m.deOficina ? '<span class="quien">Oficina ODESA</span>' : '') +
+      return '<div class="globo ' + (m.deOficina ? 'ofi' : 'yo') + '">' + (m.deOficina ? '<span class="quien">' + esc(m.quien || 'Oficina ODESA') + (E.chatPara ? '' : ' · Oficina') + '</span>' : '') +
         (m.reporte ? '<span class="rep">Reporte enviado</span><br>' : '') + esc(m.texto) +
         (m.foto ? (m.texto ? '\n' : '') + '📷 Foto enviada' : '') + '<span class="cuando">' + esc(cuandoTxt(m.fecha)) + '</span></div>';
     }).join('');
@@ -779,7 +804,7 @@
     var campo = document.getElementById('chatTxt'), texto = campo.value.trim(), b = document.getElementById('bChat');
     if (!texto && !E.chatFoto) return campo.focus();
     b.disabled = true; b.textContent = 'Enviando…'; quitarFalta();
-    llamar('chatEnviar', { cedula: E.cedula, texto: texto, foto: E.chatFoto }).then(function (r) {
+    llamar('chatEnviar', { cedula: E.cedula, texto: texto, foto: E.chatFoto, para: E.chatPara }).then(function (r) {
       b.disabled = false; b.textContent = 'Enviar';
       if (!r || !r.ok) return mostrarFalta((r && r.mensaje) || 'No se pudo enviar. Intenta de nuevo.');
       campo.value = ''; E.chatFoto = ''; pintarAdj();
@@ -976,6 +1001,12 @@
     },
     confirmar: confirmar,
     irChat: function () { irChat(); },
+    hilo: function (b) {
+      var v = b.getAttribute('data-v'); if (v === E.chatPara) return;
+      E.chatPara = v; E.chatElegido = true; E.chat = null; guardar('odesa_chat_para', v); quitarFalta();
+      document.getElementById('hilo').innerHTML = '<div class="estado espera"><span class="giro"></span>Cargando la conversación…</div>';
+      pintarHilos(); cargarChat(true);
+    },
     irReporte: function () { irReporte(); },
     chatEnviar: function () { chatEnviar(); },
     adjuntar: function () { if (E.vista === 'reporte') leerRep(); adjunto.value = ''; adjunto.click(); },
